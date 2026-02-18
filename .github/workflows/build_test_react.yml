@@ -21,6 +21,8 @@ jobs:
           npm run build --if-present
           npm run jsdoc --if-present
           npm test
+      - name: Copy docs to build folder
+        run: cp -r docs build/documentation
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
@@ -31,7 +33,6 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: build
-          path: public
 
   deploy:
     needs: build
