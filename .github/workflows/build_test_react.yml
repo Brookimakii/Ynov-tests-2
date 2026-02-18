@@ -23,6 +23,8 @@ jobs:
           npm test
       - name: Copy docs to build folder
         run: cp -r docs build/documentation
+      - name: Copy docs to build folder
+        run: cp -r coverage build/test-coverage
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
