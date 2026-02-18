@@ -68,3 +68,16 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+# Liens
+Lien du repo: https://github.com/Brookimakii/Ynov-tests-2/  
+Lien du site: https://brookimakii.github.io/Ynov-tests-2/  
+Lien de la documentation: https://brookimakii.github.io/Ynov-tests-2/documentation  
+Lien du Codecov: https://app.codecov.io/github/Brookimakii/Ynov-tests-2/tree/master  
+
+---
+
+Screenshot du dashboard Codecov;
+![Screenshot du dashboard Codecov](docs/image.png)
+
+---
