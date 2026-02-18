@@ -19,6 +19,7 @@ jobs:
         run: |
           npm ci
           npm run build --if-present
+          npm run jsdoc --if-present
           npm test
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
