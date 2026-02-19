@@ -151,6 +151,7 @@ const RegistrationForm = ({ addUser, users = [] }) => {
         timestamp: new Date().toISOString(),
       };
 
+      localStorage.setItem("userData", JSON.stringify(userData));
       addUser(userData);
 
       toast.success("Formulaire soumis avec succès !", {

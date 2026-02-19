@@ -2,11 +2,13 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RegistrationForm from "../components/RegistrationForm";
 import { toast } from "react-toastify";
+import * as userStorage from "../utils/userStorage";
 
 jest.mock("react-toastify", () => ({
   ToastContainer: () => null,
   toast: {
     success: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -28,6 +30,8 @@ describe("RegistrationForm - Integration Tests", () => {
     localStorageSpy = jest.spyOn(Storage.prototype, "setItem");
 
     jest.clearAllMocks();
+    toast.success.mockClear();
+    toast.error.mockClear();
   });
 
   afterEach(() => {
@@ -249,7 +253,8 @@ describe("RegistrationForm - Integration Tests", () => {
    */
   test("should save to localStorage, show toast, and clear form on successful submit", async () => {
     const user = userEvent.setup();
-    render(<RegistrationForm />);
+    const mockAddUser = jest.fn();
+    render(<RegistrationForm addUser={mockAddUser} />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
@@ -278,7 +283,7 @@ describe("RegistrationForm - Integration Tests", () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(localStorageSpy).toHaveBeenCalledWith("users", expect.any(String));
+      expect(localStorageSpy).toHaveBeenCalledWith("userData", expect.any(String));
     });
 
     const savedData = JSON.parse(localStorageSpy.mock.calls[0][1]);

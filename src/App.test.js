@@ -4,7 +4,7 @@ import App from './App';
 
 test("renders registration form", () => {
   render(<App />);
-  const form = screen.getByText(/registration Form/i);
+  const form = screen.getByText(/Welcome/i);
   expect(form).toBeInTheDocument();
 });
 // test('check counter on click me button', () => {
