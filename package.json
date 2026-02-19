@@ -16,7 +16,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test --coverage --collectCoverageFrom=!src/reportWebVitals.js --collectCoverageFrom=!src/index.js --watchAll=false",
     "eject": "react-scripts eject",
-    "jsdoc": "jsdoc -R ./README.md -c ./jsdoc.config.json -r -d ./public/docs"
+    "jsdoc": "jsdoc -R ./README.md -c ./jsdoc.config.json -r -d ./public/docs",
+    "cypress": "cypress open"
   },
   "eslintConfig": {
     "extends": [
@@ -40,6 +41,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "cypress": "^15.10.0",
     "jest": "^27.5.1"
   }
 }

@@ -10,84 +10,55 @@ jobs:
         node-version: [20.x]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: npm ci, build and test
+        run: |
+          npm ci
+          npm run build --if-present
+          npm run jsdoc --if-present
+          npm test
 
-      - name: Build application
-        run: npm run build --if-present
-
-      - name: Generate documentation
-        run: npm run jsdoc --if-present
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          build: npm run build
+          start: npm start
 
       - name: Copy docs to build folder
         run: cp -r docs build/documentation
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifact
-          path: build
-
       # - name: Copy docs to build folder
       #   run: cp -r coverage build/test-coverage
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20.x]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
   deploy:
-    needs: test
+    needs: build
     permissions:
       pages: write
       id-token: write
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deploy-to-pages.outputs.page_url }}
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-          path: ./artifact
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: ./artifact
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
