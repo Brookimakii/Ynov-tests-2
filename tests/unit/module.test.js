@@ -1,4 +1,4 @@
-import { calculateAge } from "../module"
+import { calculateAge } from "../../src/module"
 
 let people20years;
 beforeEach(() => {

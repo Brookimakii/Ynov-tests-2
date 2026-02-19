@@ -1,4 +1,4 @@
-import validateIdentity from "./identityValidator";
+import validateIdentity from "../../src/utils/validators/identityValidator";
 
 /**
  * @function validateIdentity

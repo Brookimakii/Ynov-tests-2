@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
-import App from './App';
+import App from '../../src/App';
 
 test("renders registration form", () => {
   render(<App />);

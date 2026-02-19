@@ -1,8 +1,8 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import RegistrationForm from "../components/RegistrationForm";
+import RegistrationForm from "../../src/components/RegistrationForm";
 import { toast } from "react-toastify";
-import * as userStorage from "../utils/userStorage";
+import * as userStorage from "../../src/utils/userStorage";
 
 jest.mock("react-toastify", () => ({
   ToastContainer: () => null,

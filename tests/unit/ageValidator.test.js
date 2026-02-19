@@ -1,4 +1,4 @@
-import validateAge from "./ageValidator";
+import validateAge from "../../src/utils/validators/ageValidator";
 
 let today;
 beforeEach(() => {

@@ -4,7 +4,7 @@ import {
   isAdult,
   isValidFrenchPostalCode,
   validatePerson,
-} from "../utils/validation";
+} from "../../src/utils/validation";
 
 describe("Validation Utils Unit Tests", () => {
 
