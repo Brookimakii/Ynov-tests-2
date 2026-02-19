@@ -4,8 +4,8 @@ import App from './App';
 
 test("renders registration form", () => {
   render(<App />);
-
-  expect(screen.getByRole("form", { hidden: true }) || screen.getByLabelText(/registration-form/i)).toBeTruthy();
+  const form = screen.getByText(/registration Form/i);
+  expect(form).toBeInTheDocument();
 });
 // test('check counter on click me button', () => {
 //   render(<App />);

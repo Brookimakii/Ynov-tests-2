@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import UserForm from "../components/UserForm";
+import RegistrationForm from "../components/RegistrationForm";
 import { toast } from "react-toastify";
 
 jest.mock("react-toastify", () => ({
@@ -11,7 +11,7 @@ jest.mock("react-toastify", () => ({
 }));
 
 /**
- * Integration tests for UserForm component
+ * Integration tests for RegistrationForm component
  * These tests verify the complete behavior of the form including:
  * - DOM rendering
  * - User interactions
@@ -19,7 +19,7 @@ jest.mock("react-toastify", () => ({
  * - Form submission
  * - localStorage integration
  */
-describe("UserForm - Integration Tests", () => {
+describe("RegistrationForm - Integration Tests", () => {
   let localStorageSpy;
 
   beforeEach(() => {
@@ -38,7 +38,7 @@ describe("UserForm - Integration Tests", () => {
    * Test: Form renders with all required fields
    */
   test("should render all form fields with labels", () => {
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     expect(screen.getByRole("textbox", { name: /first name/i })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /^last name\s*\*/i })).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe("UserForm - Integration Tests", () => {
    * Test: Submit button is initially disabled
    */
   test("should have submit button disabled initially", () => {
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const submitButton = screen.getByRole("button", { name: /submit/i });
     expect(submitButton).toBeDisabled();
@@ -64,7 +64,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should show error message when firstName is invalid on blur", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
 
@@ -81,7 +81,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should show error message when lastName contains numbers", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
 
@@ -98,7 +98,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should show error message when email is invalid", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const emailInput = screen.getByRole("textbox", { name: /email/i });
 
@@ -115,7 +115,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should show error message when user is under 18", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const birthDateInput = screen.getByLabelText(/birth date/i);
 
@@ -136,7 +136,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should show error message when postal code is invalid", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
 
@@ -153,7 +153,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should handle chaotic user behavior: invalid inputs, corrections, and re-entry", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -217,7 +217,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should enable submit button when all fields are valid", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
@@ -249,7 +249,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should save to localStorage, show toast, and clear form on successful submit", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
@@ -278,7 +278,7 @@ describe("UserForm - Integration Tests", () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(localStorageSpy).toHaveBeenCalledWith("userData", expect.any(String));
+      expect(localStorageSpy).toHaveBeenCalledWith("users", expect.any(String));
     });
 
     const savedData = JSON.parse(localStorageSpy.mock.calls[0][1]);
@@ -315,7 +315,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should detect and prevent XSS attacks in firstName", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
 
@@ -332,7 +332,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should remove error message when field is corrected", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const emailInput = screen.getByRole("textbox", { name: /email/i });
 
@@ -357,7 +357,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should display multiple validation errors simultaneously", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -382,7 +382,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should keep submit button disabled when only some fields are filled", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -399,7 +399,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should accept user who is exactly 18 years old today", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const birthDateInput = screen.getByLabelText(/birth date/i);
 
@@ -420,7 +420,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should validate in real-time after field has been touched", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
 
@@ -446,7 +446,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should reject future birth dates", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const birthDateInput = screen.getByLabelText(/birth date/i);
 
@@ -467,7 +467,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should accept postal codes starting with 0", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
 
@@ -486,7 +486,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should show error when city contains numbers or special characters", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const cityInput = screen.getByRole("textbox", { name: /^city/i });
 
@@ -511,7 +511,7 @@ describe("UserForm - Integration Tests", () => {
    */
   test("should reject birth date older than 120 years", async () => {
     const user = userEvent.setup();
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const birthDateInput = screen.getByLabelText(/birth date/i);
 
@@ -531,7 +531,7 @@ describe("UserForm - Integration Tests", () => {
    * Test: Attempting to submit invalid form does nothing
    */
   test("should not submit form when data is invalid", async () => {
-    render(<UserForm />);
+    render(<RegistrationForm />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const form = screen.getByRole("form", { name: /user registration form/i });

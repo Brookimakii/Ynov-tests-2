@@ -1,44 +1,40 @@
-// import logo from './logo.svg';
 import './App.css';
-// import { useState } from 'react';
 import RegistrationForm from './components/RegistrationForm'; 
-import { Route, Routes } from 'react-router-dom';
-import { Switch } from 'react-router-dom';
-import { router } from './router/RouterModule';
-import { Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router';
+import HomePage from './pages/HomePage';
+import { useEffect, useState } from "react"
+import { loadUsers, saveUsers, addUser as addUserUtil } from './utils/userStorage';
+
+
 
 function App() {
-    // return <RouterProvider router={router}/>
-    return (
-      <Routes>
-        <Route path="/Ynov-tests-2" element={<><p>Welcome to the Ynov tests app!</p><Link to="register">Go to registration form</Link></>} />
-        <Route path="/Ynov-tests-2/register" element={<RegistrationForm />} />
-      </Routes>
-    )
-    // return <RegistrationForm />;
+  const [users, setUsers] = useState([]);
 
-  // return (
-  //   <div className="App">
-  //     <header className="App-header">
-  //       <img src={logo} className="App-logo" alt="logo" />
-  //       <p>
-  //         Edit <code>src/App.js</code> and save to reload.
-  //       </p>
-  //       <a
-  //         className="App-link"
-  //         href="https://reactjs.org"
-  //         target="_blank"
-  //         rel="noopener noreferrer"
-  //       >
-  //         Learn React
-  //       </a>
-  //     </header>
-  //     <div>
-  //       <button onClick={clickOnMe}>Click me</button>
-  //       <span data-testid="count">{count}</span>
-  //     </div>
-  //   </div>
-  // );
+  // Charger depuis localStorage au démarrage
+  useEffect(() => {
+    setUsers(loadUsers());
+  }, []);
+
+  // Ajouter un utilisateur
+  const addUser = (user) => {
+    const updatedUsers = addUserUtil(users, user);
+    setUsers(updatedUsers);
+    saveUsers(updatedUsers);
+  };
+
+  return (
+    <Router>
+      <nav style={{ display: "flex", gap: "10px", padding: "10px" }}>
+        <Link to="/">Home</Link>
+        <Link to="/register">Register</Link>
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<HomePage users={users} />} />
+        <Route path="/register" element={<RegistrationForm addUser={addUser} />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

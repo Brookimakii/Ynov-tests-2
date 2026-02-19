@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import * as validators from "../utils/validators";
+import { isFormValidData } from "../utils/formValidation";
+
 import "react-toastify/dist/ReactToastify.css";
 import "./UserForm.css";
 
 /**
- * UserForm Component - Registration form with real-time validation
+ * RegistrationForm Component - Registration form with real-time validation
  *
  * @component
  * @description Form component that collects user information (first name, last name, email,
@@ -13,7 +15,7 @@ import "./UserForm.css";
  *
  * @returns {JSX.Element} The rendered form component
  */
-const UserForm = () => {
+const RegistrationForm = ({ addUser }) => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -52,42 +54,38 @@ const UserForm = () => {
     try {
       switch (fieldName) {
         case "firstName":
-          validators.validateIdentity(value);
-          return "";
-
         case "lastName":
+        case "city":
           validators.validateIdentity(value);
-          return "";
+          break;
 
         case "email":
           validators.validateEmail(value);
-          return "";
+          break;
 
         case "birthDate":
-          if (!value) {
-            return "Birth date is required";
-          }
-          const date = new Date(value);
-          validators.validateAge(date);
-          return "";
+          if (!value) throw new Error("Birth date is required");
+          validators.validateAge(new Date(value));
+          break;
 
         case "postalCode":
           validators.validatePostalCode(value);
-          return "";
-
-        case "city":
-          validators.validateIdentity(value);
-          return "";
+          break;
 
         /* istanbul ignore next */
         default:
-          return "";
+          break;
       }
+      return "";
     } catch (error) {
       return error.message;
     }
   };
 
+  const handleClick = () => {
+    toast.success("Success!");
+    toast.error("Error!"); // this should work
+  };
   /**
    * Handles input change events with real-time validation
    *
@@ -95,6 +93,7 @@ const UserForm = () => {
    */
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     if (touched[name]) {
@@ -110,6 +109,7 @@ const UserForm = () => {
    */
   const handleBlur = (e) => {
     const { name, value } = e.target;
+
     setTouched((prev) => ({ ...prev, [name]: true }));
 
     const errorMessage = validateField(name, value);
@@ -126,12 +126,7 @@ const UserForm = () => {
     if (!allFieldsFilled) return false;
 
     try {
-      validators.validateIdentity(formData.firstName);
-      validators.validateIdentity(formData.lastName);
-      validators.validateEmail(formData.email);
-      validators.validateAge(new Date(formData.birthDate));
-      validators.validatePostalCode(formData.postalCode);
-      validators.validateIdentity(formData.city);
+      isFormValidData(formData);
       return true;
     } catch (error) {
       return false;
@@ -147,13 +142,15 @@ const UserForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (isFormValid()) {
+    try {
+      isFormValidData(formData);
+
       const userData = {
         ...formData,
         timestamp: new Date().toISOString(),
       };
 
-      localStorage.setItem("userData", JSON.stringify(userData));
+      addUser(userData);
 
       toast.success("Formulaire soumis avec succès !", {
         position: "top-right",
@@ -190,135 +187,50 @@ const UserForm = () => {
         postalCode: false,
         city: false,
       });
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
   return (
     <div className="user-form-container">
+      <button onClick={handleClick}>Show Toasts</button>
       <ToastContainer />
       <form className="user-form" onSubmit={handleSubmit} noValidate aria-label="User registration form">
         <h1>Registration Form</h1>
 
-        <div className="form-group">
-          <label htmlFor="firstName">First Name *</label>
-          <input
-            type="text"
-            id="firstName"
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className={errors.firstName && touched.firstName ? "error" : ""}
-            aria-invalid={errors.firstName && touched.firstName ? "true" : "false"}
-            aria-describedby={errors.firstName && touched.firstName ? "firstName-error" : undefined}
-          />
-          {errors.firstName && touched.firstName && (
-            <span id="firstName-error" className="error-message" role="alert">
-              {errors.firstName}
-            </span>
-          )}
-        </div>
+        {[
+          { name: "firstName", label: "First Name", type: "text" },
+          { name: "lastName", label: "Last Name", type: "text" },
+          { name: "email", label: "Email", type: "email" },
+          { name: "birthDate", label: "Birth date", type: "date" },
+          { name: "postalCode", label: "Postal Code", type: "text", maxLength: 5 },
+          { name: "city", label: "City", type: "text" },
+        ].map(({ name, label, type, maxLength }) => (
+          <div className="form-group" key={name}>
+            <label htmlFor={name}>{label} *</label>
 
-        <div className="form-group">
-          <label htmlFor="lastName">Last Name *</label>
-          <input
-            type="text"
-            id="lastName"
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className={errors.lastName && touched.lastName ? "error" : ""}
-            aria-invalid={errors.lastName && touched.lastName ? "true" : "false"}
-            aria-describedby={errors.lastName && touched.lastName ? "lastName-error" : undefined}
-          />
-          {errors.lastName && touched.lastName && (
-            <span id="lastName-error" className="error-message" role="alert">
-              {errors.lastName}
-            </span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="email">Email *</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className={errors.email && touched.email ? "error" : ""}
-            aria-invalid={errors.email && touched.email ? "true" : "false"}
-            aria-describedby={errors.email && touched.email ? "email-error" : undefined}
-          />
-          {errors.email && touched.email && (
-            <span id="email-error" className="error-message" role="alert">
-              {errors.email}
-            </span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="birthDate">Birth date *</label>
-          <input
-            type="date"
-            id="birthDate"
-            name="birthDate"
-            value={formData.birthDate}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className={errors.birthDate && touched.birthDate ? "error" : ""}
-            aria-invalid={errors.birthDate && touched.birthDate ? "true" : "false"}
-            aria-describedby={errors.birthDate && touched.birthDate ? "birthDate-error" : undefined}
-          />
-          {errors.birthDate && touched.birthDate && (
-            <span id="birthDate-error" className="error-message" role="alert">
-              {errors.birthDate}
-            </span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="postalCode">Postal Code *</label>
-          <input
-            type="text"
-            id="postalCode"
-            name="postalCode"
-            value={formData.postalCode}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className={errors.postalCode && touched.postalCode ? "error" : ""}
-            aria-invalid={errors.postalCode && touched.postalCode ? "true" : "false"}
-            aria-describedby={errors.postalCode && touched.postalCode ? "postalCode-error" : undefined}
-            maxLength="5"
-          />
-          {errors.postalCode && touched.postalCode && (
-            <span id="postalCode-error" className="error-message" role="alert">
-              {errors.postalCode}
-            </span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="city">City *</label>
-          <input
-            type="text"
-            id="city"
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className={errors.city && touched.city ? "error" : ""}
-            aria-invalid={errors.city && touched.city ? "true" : "false"}
-            aria-describedby={errors.city && touched.city ? "city-error" : undefined}
-          />
-          {errors.city && touched.city && (
-            <span id="city-error" className="error-message" role="alert">
-              {errors.city}
-            </span>
-          )}
-        </div>
+            <input
+              id={name}
+              name={name}
+              type={type}
+              value={formData[name]}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              maxLength={maxLength}
+              className={errors[name] && touched[name] ? "error" : ""}
+              aria-invalid={errors[name] && touched[name] ? "true" : "false"}
+              aria-describedby={
+                errors[name] && touched[name] ? `${name}-error` : undefined
+              }
+            />
+            {errors[name] && touched[name] && (
+              <span id={`${name}-error`} className="error-message" role="alert">
+                {errors[name]}
+              </span>
+            )}
+          </div>
+        ))}
 
         <button type="submit" className="submit-button" disabled={!isFormValid()} aria-label="Submit the form">
           Submit
@@ -328,4 +240,4 @@ const UserForm = () => {
   );
 };
 
-export default UserForm;
+export default RegistrationForm;
