@@ -31,7 +31,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<HomePage users={users} />} />
-        <Route path="/register" element={<RegistrationForm addUser={addUser} />} />
+        <Route path="/register" element={<RegistrationForm addUser={addUser} users={users} />} />
       </Routes>
     </Router>
   );

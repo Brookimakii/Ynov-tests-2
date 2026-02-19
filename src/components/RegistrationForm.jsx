@@ -15,7 +15,7 @@ import "./UserForm.css";
  *
  * @returns {JSX.Element} The rendered form component
  */
-const RegistrationForm = ({ addUser }) => {
+const RegistrationForm = ({ addUser, users = [] }) => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -61,6 +61,9 @@ const RegistrationForm = ({ addUser }) => {
 
         case "email":
           validators.validateEmail(value);
+          if (users.some((u) => u.email === value)) {
+            return "Cet email est déjà utilisé";
+          }
           break;
 
         case "birthDate":
@@ -125,12 +128,10 @@ const RegistrationForm = ({ addUser }) => {
     const allFieldsFilled = Object.values(formData).every((value) => value.trim() !== "");
     if (!allFieldsFilled) return false;
 
-    try {
-      isFormValidData(formData);
-      return true;
-    } catch (error) {
-      return false;
-    }
+    const validationResults = Object.keys(formData).map((field) =>
+      validateField(field, formData[field])
+    );
+    return validationResults.every((msg) => msg === "");
   };
 
   /**
