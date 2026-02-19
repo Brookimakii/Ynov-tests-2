@@ -1,4 +1,4 @@
-import validatePostalCode from "../../src/utils/validators/postalCodeValidator";
+import validatePostalCode from "../../utils/validators/postalCodeValidator";
 
 /**
  * @function validatePostalCode

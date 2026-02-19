@@ -1,4 +1,4 @@
-import validateEmail from "../../src/utils/validators/emailValidator";
+import validateEmail from "../../utils/validators/emailValidator";
 
 /**
  * @function validateEmail

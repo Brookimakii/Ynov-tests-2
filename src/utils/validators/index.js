@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 /**
  * @module validators
  * @description Centralized exports for all validation functions

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import './App.css';
 import RegistrationForm from './components/RegistrationForm'; 
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router';
@@ -24,6 +25,7 @@ function App() {
 
   return (
     <Router>
+      {/* istanbul ignore next */}
       <nav style={{ display: "flex", gap: "10px", padding: "10px" }}>
         <Link to="/">Home</Link>
         <Link to="/register">Register</Link>

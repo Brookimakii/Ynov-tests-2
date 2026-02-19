@@ -4,7 +4,7 @@ import {
   isAdult,
   isValidFrenchPostalCode,
   validatePerson,
-} from "../../src/utils/validation";
+} from "../../utils/validation";
 
 describe("Validation Utils Unit Tests", () => {
 
@@ -59,6 +59,10 @@ describe("Validation Utils Unit Tests", () => {
     it("empty date returns false", () => {
       expect(isAdult("")).toBe(false);
       expect(isAdult(null)).toBe(false);
+    });
+
+    it("invalid date returns false (calculateAge throws)", () => {
+      expect(isAdult("not-a-date")).toBe(false);
     });
   });
 

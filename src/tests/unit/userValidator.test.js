@@ -1,4 +1,4 @@
-import validateUser from "../../src/utils/validators/userValidator";
+import validateUser from "../../utils/validators/userValidator";
 
 let today;
 beforeEach(() => {

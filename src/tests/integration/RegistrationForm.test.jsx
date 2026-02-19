@@ -1,8 +1,8 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import RegistrationForm from "../../src/components/RegistrationForm";
+import RegistrationForm from "../../components/RegistrationForm";
 import { toast } from "react-toastify";
-import * as userStorage from "../../src/utils/userStorage";
+import * as userStorage from "../../utils/userStorage";
 
 jest.mock("react-toastify", () => ({
   ToastContainer: () => null,
@@ -546,5 +546,30 @@ describe("RegistrationForm - Integration Tests", () => {
     fireEvent.submit(form);
 
     expect(localStorage.getItem("userData")).toBeNull();
+  });
+
+  test("should show toasts when Show Toasts button clicked", async () => {
+    const user = userEvent.setup();
+    render(<RegistrationForm />);
+
+    const showButton = screen.getByRole("button", { name: /show toasts/i });
+    await user.click(showButton);
+
+    expect(toast.success).toHaveBeenCalledWith("Success!");
+    expect(toast.error).toHaveBeenCalledWith("Error!");
+  });
+
+  test("should show duplicate email error when email already used", async () => {
+    const user = userEvent.setup();
+    const existing = [{ email: "dup@example.com" }];
+    render(<RegistrationForm users={existing} />);
+
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    await user.type(emailInput, "dup@example.com");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Cet email est déjà utilisé/)).toBeInTheDocument();
+    });
   });
 });
