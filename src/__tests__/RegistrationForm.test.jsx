@@ -1,156 +1,545 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import RegistrationForm from "../components/RegistrationForm";
+import UserForm from "../components/UserForm";
+import { toast } from "react-toastify";
 
-describe("RegistrationForm Integration Tests", () => {
-    beforeEach(() => localStorage.clear());
+jest.mock("react-toastify", () => ({
+  ToastContainer: () => null,
+  toast: {
+    success: jest.fn(),
+  },
+}));
 
-    test("shows errors for invalid inputs and clears them on correction", async () => {
-        render(<RegistrationForm />);
+/**
+ * Integration tests for UserForm component
+ * These tests verify the complete behavior of the form including:
+ * - DOM rendering
+ * - User interactions
+ * - Validation feedback
+ * - Form submission
+ * - localStorage integration
+ */
+describe("UserForm - Integration Tests", () => {
+  let localStorageSpy;
 
-        // submit empty form → all errors appear
-        await userEvent.click(screen.getByRole("button", { name: /s'inscrire/i }));
-        expect(screen.getByText(/^Nom invalide$/i)).toBeInTheDocument();
-        expect(screen.getByText(/^Prénom invalide$/i)).toBeInTheDocument();
-        expect(screen.getByText(/^Email invalide$/i)).toBeInTheDocument();
-        expect(screen.getByText(/^Date naissance invalide$/i)).toBeInTheDocument();
-        expect(screen.getByText(/^Ville invalide$/i)).toBeInTheDocument();
-        expect(screen.getByText(/^Code postal invalide$/i)).toBeInTheDocument();
+  beforeEach(() => {
+    localStorage.clear();
 
-        // type invalid names → errors still present
-        await userEvent.type(screen.getByPlaceholderText(/^Nom$/i), "J");
-        await userEvent.type(screen.getByPlaceholderText(/^Prénom$/i), "A");
-        expect(screen.getByText(/^Nom invalide$/i)).toBeInTheDocument();
-        expect(screen.getByText(/^Prénom invalide$/i)).toBeInTheDocument();
+    localStorageSpy = jest.spyOn(Storage.prototype, "setItem");
 
-        // correct names → errors disappear
-        await userEvent.clear(screen.getByPlaceholderText(/^Nom$/i));
-        await userEvent.type(screen.getByPlaceholderText(/^Nom$/i), "Doe");
-        expect(screen.queryByText(/^Nom invalide$/i)).not.toBeInTheDocument();
+    jest.clearAllMocks();
+  });
 
-        await userEvent.clear(screen.getByPlaceholderText(/^Prénom$/i));
-        await userEvent.type(screen.getByPlaceholderText(/^Prénom$/i), "John");
-        expect(screen.queryByText(/^Prénom invalide$/i)).not.toBeInTheDocument();
+  afterEach(() => {
+    localStorageSpy.mockRestore();
+  });
+
+  /**
+   * Test: Form renders with all required fields
+   */
+  test("should render all form fields with labels", () => {
+    render(<UserForm />);
+
+    expect(screen.getByRole("textbox", { name: /first name/i })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /^last name\s*\*/i })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /email/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/birth date/i)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /postal code/i })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /^city/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /submit/i })).toBeInTheDocument();
+  });
+
+  /**
+   * Test: Submit button is initially disabled
+   */
+  test("should have submit button disabled initially", () => {
+    render(<UserForm />);
+
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+    expect(submitButton).toBeDisabled();
+  });
+
+  /**
+   * Test: Error messages appear on invalid input after blur
+   */
+  test("should show error message when firstName is invalid on blur", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+
+    await user.type(firstNameInput, "A");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/must be at least 2 characters long/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Error message appears for invalid lastName
+   */
+  test("should show error message when lastName contains numbers", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+
+    await user.type(lastNameInput, "Smith123");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/can only contain letters.*no digits/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Error message appears for invalid email format
+   */
+  test("should show error message when email is invalid", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+
+    await user.type(emailInput, "invalid-email");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/must be in a valid format.*example@domain/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Error message appears for underage user
+   */
+  test("should show error message when user is under 18", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+    const dateString = tenYearsAgo.toISOString().split("T")[0];
+
+    await user.type(birthDateInput, dateString);
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/you must be at least 18 years old/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Error message appears for invalid postal code
+   */
+  test("should show error message when postal code is invalid", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+
+    await user.type(postalCodeInput, "123");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/must be exactly 5 digits/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Simulating a "chaotic user" - invalid inputs, corrections, re-entry
+   */
+  test("should handle chaotic user behavior: invalid inputs, corrections, and re-entry", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    expect(submitButton).toBeDisabled();
+
+    await user.type(firstNameInput, "A");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/must be at least 2 characters long/i)).toBeInTheDocument();
+    });
+    expect(submitButton).toBeDisabled();
+
+    await user.clear(firstNameInput);
+    await user.type(firstNameInput, "Jean");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/must be at least 2 characters long/i)).not.toBeInTheDocument();
     });
 
-    test("submit valid form and store person object in localStorage", async () => {
-        render(<RegistrationForm />);
+    await user.type(emailInput, "bad-email");
+    await user.tab();
 
-        await userEvent.type(screen.getByPlaceholderText(/^Nom$/i), "Doe");
-        await userEvent.type(screen.getByPlaceholderText(/^Prénom$/i), "John");
-        await userEvent.type(screen.getByPlaceholderText(/^Email$/i), "john@mail.com");
+    await waitFor(() => {
+      expect(screen.getByText(/must be in a valid format.*example@domain/i)).toBeInTheDocument();
+    });
+    expect(submitButton).toBeDisabled();
 
-        const birthInput = screen.getByLabelText(/^registration-form$/i).querySelector('input[name="birthDate"]');
-        fireEvent.change(birthInput, { target: { value: "2000-01-01" } });
+    await user.clear(emailInput);
+    await user.type(emailInput, "jean@example.com");
+    await user.tab();
 
-        await userEvent.type(screen.getByPlaceholderText(/^Ville$/i), "Paris");
-        await userEvent.type(screen.getByPlaceholderText(/^Code postal$/i), "75001");
-
-        // button enabled
-        const submitBtn = screen.getByRole("button", { name: /s'inscrire/i });
-        expect(submitBtn).not.toBeDisabled();
-
-        // submit
-        await userEvent.click(submitBtn);
-
-        // success message
-        expect(screen.getByText(/^Utilisateur enregistré !/i)).toBeInTheDocument();
-
-        // form cleared
-        expect(screen.getByPlaceholderText(/^Nom$/i)).toHaveValue("");
-        expect(screen.getByPlaceholderText(/^Prénom$/i)).toHaveValue("");
-
-        // localStorage contains full person object
-        const stored = JSON.parse(localStorage.getItem("user"));
-        expect(stored).toEqual({
-        lastName: "Doe",
-        firstName: "John",
-        email: "john@mail.com",
-        birthDate: "2000-01-01",
-        city: "Paris",
-        postalCode: "75001",
-        });
+    await waitFor(() => {
+      expect(screen.queryByText(/must be in a valid format/i)).not.toBeInTheDocument();
     });
 
-    test("submit button disabled while form invalid", async () => {
-        render(<RegistrationForm />);
-        const submitBtn = screen.getByRole("button", { name: /s'inscrire/i });
-        expect(submitBtn).toBeDisabled();
+    await user.type(postalCodeInput, "ABCDE");
+    await user.tab();
 
-        await userEvent.type(screen.getByPlaceholderText(/^Nom$/i), "Doe");
-        expect(submitBtn).toBeDisabled();
-
-        await userEvent.type(screen.getByPlaceholderText(/^Prénom$/i), "John");
-        expect(submitBtn).toBeDisabled();
+    await waitFor(() => {
+      expect(screen.getByText(/must be exactly 5 digits/i)).toBeInTheDocument();
     });
 
-    test("success message disappears when user starts typing again", async () => {
-        render(<RegistrationForm />);
+    await user.clear(postalCodeInput);
+    await user.type(postalCodeInput, "75001");
+    await user.tab();
 
-        await userEvent.type(screen.getByPlaceholderText(/^Nom$/i), "Doe");
-        await userEvent.type(screen.getByPlaceholderText(/^Prénom$/i), "John");
-        await userEvent.type(screen.getByPlaceholderText(/^Email$/i), "john@mail.com");
-        const birthInput = screen.getByLabelText(/^registration-form$/i).querySelector('input[name="birthDate"]');
-        fireEvent.change(birthInput, { target: { value: "2000-01-01" } });
-        await userEvent.type(screen.getByPlaceholderText(/^Ville$/i), "Paris");
-        await userEvent.type(screen.getByPlaceholderText(/^Code postal$/i), "75001");
-
-        await userEvent.click(screen.getByRole("button", { name: /s'inscrire/i }));
-        expect(screen.getByText(/^Utilisateur enregistré !/i)).toBeInTheDocument();
-
-        await userEvent.type(screen.getByPlaceholderText(/^Nom$/i), "X");
-        expect(screen.queryByText(/^Utilisateur enregistré !/i)).not.toBeInTheDocument();
-    });
-});
-
-
-describe("UI visual feedback", () => {
-    beforeEach(() => localStorage.clear());
-    test("error messages are displayed in red", async () => {
-        render(<RegistrationForm />);
-
-        const lastNameInput = screen.getByPlaceholderText(/^nom$/i);
-        fireEvent.blur(lastNameInput);
-
-        const error = await screen.findByText(/^Nom invalide$/i);
-
-        expect(error).toBeInTheDocument();
-        expect(error).toHaveStyle({ color: "red" });
+    await waitFor(() => {
+      expect(screen.queryByText(/must be exactly 5 digits/i)).not.toBeInTheDocument();
     });
 
-    test("success message is displayed in green after valid submit", async () => {
-        render(<RegistrationForm />);
+    expect(submitButton).toBeDisabled();
+  });
 
-        await userEvent.type(screen.getByPlaceholderText(/^nom$/i), "Doe");
-        await userEvent.type(screen.getByPlaceholderText(/^prénom$/i), "John");
-        await userEvent.type(screen.getByPlaceholderText(/^email$/i), "john@mail.com");
+  /**
+   * Test: Submit button becomes enabled when all fields are valid
+   */
+  test("should enable submit button when all fields are valid", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
 
-        const birthInput = screen.getByLabelText(/^registration-form$/i).querySelector('input[name="birthDate"]');
-        fireEvent.change(birthInput, { target: { value: "2000-01-01" } });
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
 
-        await userEvent.type(screen.getByPlaceholderText(/^ville$/i), "Paris");
-        await userEvent.type(screen.getByPlaceholderText(/^code postal$/i), "75001");
+    await user.type(firstNameInput, "Jean");
+    await user.type(lastNameInput, "Dupont");
+    await user.type(emailInput, "jean.dupont@example.com");
 
-        await userEvent.click(screen.getByRole("button", { name: /^S'inscrire$/i }));
+    const thirtyYearsAgo = new Date();
+    thirtyYearsAgo.setFullYear(thirtyYearsAgo.getFullYear() - 30);
+    const dateString = thirtyYearsAgo.toISOString().split("T")[0];
+    await user.type(birthDateInput, dateString);
 
-        const success = await screen.findByText(/^Utilisateur enregistré !/i);
+    await user.type(postalCodeInput, "75001");
+    await user.type(cityInput, "Paris");
 
-        expect(success).toBeInTheDocument();
-        expect(success).toHaveStyle({ color: "green" });
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
     });
-});
+  });
 
-describe("Security: prevent invalid forced submit", () => {
-    beforeEach(() => localStorage.clear());
-    test("does NOT submit when form is invalid even if submit event is triggered", async () => {
-        render(<RegistrationForm />);
-        await userEvent.click(screen.getByRole("button", { name: /s'inscrire/i }));
-        
-        expect(screen.queryByText(/utilisateur enregistré/i)).not.toBeInTheDocument();
+  /**
+   * Test: Form submission - localStorage spy, toast notification, form reset
+   */
+  test("should save to localStorage, show toast, and clear form on successful submit", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
 
-        expect(localStorage.getItem("user")).toBeNull();
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
 
-        expect(screen.getByText(/^Nom invalide$/i)).toBeInTheDocument();
-        expect(screen.getByText(/^Prénom invalide$/i)).toBeInTheDocument();
+    await user.type(firstNameInput, "Marie");
+    await user.type(lastNameInput, "Martin");
+    await user.type(emailInput, "marie.martin@example.com");
+
+    const thirtyYearsAgo = new Date();
+    thirtyYearsAgo.setFullYear(thirtyYearsAgo.getFullYear() - 30);
+    const dateString = thirtyYearsAgo.toISOString().split("T")[0];
+    await user.type(birthDateInput, dateString);
+
+    await user.type(postalCodeInput, "69001");
+    await user.type(cityInput, "Lyon");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
     });
+
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(localStorageSpy).toHaveBeenCalledWith("userData", expect.any(String));
+    });
+
+    const savedData = JSON.parse(localStorageSpy.mock.calls[0][1]);
+    expect(savedData).toMatchObject({
+      firstName: "Marie",
+      lastName: "Martin",
+      email: "marie.martin@example.com",
+      birthDate: dateString,
+      postalCode: "69001",
+      city: "Lyon",
+    });
+    expect(savedData).toHaveProperty("timestamp");
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "Formulaire soumis avec succès !",
+      expect.objectContaining({
+        position: "top-right",
+        autoClose: 3000,
+      }),
+    );
+
+    expect(firstNameInput).toHaveValue("");
+    expect(lastNameInput).toHaveValue("");
+    expect(emailInput).toHaveValue("");
+    expect(birthDateInput).toHaveValue("");
+    expect(postalCodeInput).toHaveValue("");
+    expect(cityInput).toHaveValue("");
+
+    expect(submitButton).toBeDisabled();
+  });
+
+  /**
+   * Test: XSS protection - form should show error for malicious input
+   */
+  test("should detect and prevent XSS attacks in firstName", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+
+    await user.type(firstNameInput, '<script>alert("xss")</script>');
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/potential xss injection detected/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Error disappears when corrected
+   */
+  test("should remove error message when field is corrected", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+
+    await user.type(emailInput, "invalid");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/must be in a valid format.*example@domain/i)).toBeInTheDocument();
+    });
+
+    await user.clear(emailInput);
+    await user.type(emailInput, "valid@example.com");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/must be in a valid format/i)).not.toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Multiple validation errors can appear simultaneously
+   */
+  test("should display multiple validation errors simultaneously", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+
+    await user.type(firstNameInput, "A");
+    await user.tab();
+
+    await user.type(emailInput, "bad");
+    await user.tab();
+
+    await user.type(postalCodeInput, "12");
+    await user.tab();
+
+    expect(screen.getByText(/must be at least 2 characters long/i)).toBeInTheDocument();
+    expect(screen.getByText(/must be in a valid format.*example@domain/i)).toBeInTheDocument();
+    expect(screen.getByText(/must be exactly 5 digits/i)).toBeInTheDocument();
+  });
+
+  /**
+   * Test: Submit button stays disabled with partially filled form
+   */
+  test("should keep submit button disabled when only some fields are filled", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    await user.type(firstNameInput, "Jean");
+    await user.type(emailInput, "jean@example.com");
+
+    expect(submitButton).toBeDisabled();
+  });
+
+  /**
+   * Test: Edge case - exactly 18 years old should be valid
+   */
+  test("should accept user who is exactly 18 years old today", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+
+    const exactlyEighteen = new Date();
+    exactlyEighteen.setFullYear(exactlyEighteen.getFullYear() - 18);
+    const dateString = exactlyEighteen.toISOString().split("T")[0];
+
+    await user.type(birthDateInput, dateString);
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/you must be at least 18 years old/i)).not.toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Form validation on real-time typing after initial blur
+   */
+  test("should validate in real-time after field has been touched", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+
+    await user.type(firstNameInput, "A");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/must be at least 2 characters long/i)).toBeInTheDocument();
+    });
+
+    await user.click(firstNameInput);
+    await user.type(firstNameInput, "nne");
+
+    await waitFor(() => {
+      expect(screen.queryByText(/must be at least 2 characters long/i)).not.toBeInTheDocument();
+    });
+
+    expect(firstNameInput).toHaveValue("Anne");
+  });
+
+  /**
+   * Test: Edge case - future birth date should be invalid
+   */
+  test("should reject future birth dates", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateString = tomorrow.toISOString().split("T")[0];
+
+    await user.type(birthDateInput, dateString);
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/birth date cannot be in the future/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Edge case - postal code starting with 0 should be valid
+   */
+  test("should accept postal codes starting with 0", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+
+    await user.type(postalCodeInput, "01000");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.queryByText(/must be exactly 5 digits/i)).not.toBeInTheDocument();
+    });
+
+    expect(postalCodeInput).toHaveValue("01000");
+  });
+
+  /**
+   * Test: Edge case - city with numbers or special characters should be invalid
+   */
+  test("should show error when city contains numbers or special characters", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+
+    await user.type(cityInput, "Paris123");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/can only contain letters.*no digits/i)).toBeInTheDocument();
+    });
+
+    await user.clear(cityInput);
+    await user.type(cityInput, "Paris@#$");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/can only contain letters.*no digits/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Edge case - unrealistic age (over 120 years old) should be invalid
+   */
+  test("should reject birth date older than 120 years", async () => {
+    const user = userEvent.setup();
+    render(<UserForm />);
+
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+
+    const tooOld = new Date();
+    tooOld.setFullYear(tooOld.getFullYear() - 151);
+    const dateString = tooOld.toISOString().split("T")[0];
+
+    await user.type(birthDateInput, dateString);
+    await user.tab();
+
+    await waitFor(() => {
+      expect(screen.getByText(/calculated age is unrealistic.*over 150 years/i)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * Test: Attempting to submit invalid form does nothing
+   */
+  test("should not submit form when data is invalid", async () => {
+    render(<UserForm />);
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const form = screen.getByRole("form", { name: /user registration form/i });
+
+    fireEvent.change(firstNameInput, { target: { name: "firstName", value: "John" } });
+
+    fireEvent.submit(form);
+
+    expect(localStorage.getItem("userData")).toBeNull();
+  });
 });

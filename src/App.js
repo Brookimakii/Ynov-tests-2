@@ -2,10 +2,20 @@
 import './App.css';
 // import { useState } from 'react';
 import RegistrationForm from './components/RegistrationForm'; 
+import { Route, Routes } from 'react-router-dom';
+import { Switch } from 'react-router-dom';
+import { router } from './router/RouterModule';
+import { Link } from 'react-router-dom';
 
 function App() {
-
-    return <RegistrationForm />;
+    // return <RouterProvider router={router}/>
+    return (
+      <Routes>
+        <Route path="/Ynov-tests-2" element={<><p>Welcome to the Ynov tests app!</p><Link to="register">Go to registration form</Link></>} />
+        <Route path="/Ynov-tests-2/register" element={<RegistrationForm />} />
+      </Routes>
+    )
+    // return <RegistrationForm />;
 
   // return (
   //   <div className="App">
