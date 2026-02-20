@@ -5,23 +5,34 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router';
 import HomePage from './pages/HomePage';
 import { useEffect, useState } from "react"
 import { loadUsers, saveUsers, addUser as addUserUtil } from './utils/userStorage';
-
+import { getUsers, createUser } from './api/userAPI';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 function App() {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Charger depuis localStorage au démarrage
   useEffect(() => {
-    setUsers(loadUsers());
+    const loadUsers = async () => {
+      try {
+        const data = await getUsers();
+        setUsers(data);
+      } catch (error) {
+        console.error("Error fetching users", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsers();
   }, []);
 
-  // Ajouter un utilisateur
-  const addUser = (user) => {
-    const updatedUsers = addUserUtil(users, user);
-    setUsers(updatedUsers);
-    saveUsers(updatedUsers);
-  };
+  if (loading) {
+    return <p>Chargement...</p>;
+  }
 
   return (
     <Router>
@@ -33,7 +44,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<HomePage users={users} />} />
-        <Route path="/register" element={<RegistrationForm addUser={addUser} users={users} />} />
+        <Route path="/register" element={<RegistrationForm users={users} />} />
       </Routes>
     </Router>
   );

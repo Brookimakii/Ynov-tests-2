@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import * as validators from "../utils/validators";
 import { isFormValidData } from "../utils/formValidation";
+import { createUser } from "../api/userAPI";
 
 import "react-toastify/dist/ReactToastify.css";
 import "./UserForm.css";
@@ -15,7 +16,7 @@ import "./UserForm.css";
  *
  * @returns {JSX.Element} The rendered form component
  */
-const RegistrationForm = ({ addUser, users = [] }) => {
+const RegistrationForm = ({ users = [] }) => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -136,11 +137,11 @@ const RegistrationForm = ({ addUser, users = [] }) => {
 
   /**
    * Handles form submission
-   * Saves data to localStorage, displays success message, and resets form
+   * Sends data to API, displays success message, and resets form
    *
    * @param {Event} e - Form submit event
    */
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
@@ -151,8 +152,7 @@ const RegistrationForm = ({ addUser, users = [] }) => {
         timestamp: new Date().toISOString(),
       };
 
-      localStorage.setItem("userData", JSON.stringify(userData));
-      addUser(userData);
+      await createUser(userData);
 
       toast.success("Formulaire soumis avec succès !", {
         position: "top-right",
@@ -190,7 +190,16 @@ const RegistrationForm = ({ addUser, users = [] }) => {
         city: false,
       });
     } catch (err) {
-      toast.error(err.message);
+      // Handle different error types
+      let errorMessage = err.message;
+      console.log("Error in form submission:", err);
+      if (err.message === "SERVER_ERROR") {
+        errorMessage = "Le serveur est indisponible. Veuillez réessayer plus tard.";
+      } else if (err.message === "EMAIL_EXISTS") {
+        errorMessage = "Cet email est déjà utilisé";
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
