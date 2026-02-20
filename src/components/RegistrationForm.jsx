@@ -192,7 +192,7 @@ const RegistrationForm = ({ users = [] }) => {
     } catch (err) {
       // Handle different error types
       let errorMessage = err.message;
-      console.log("Error in form submission:", err);
+      // console.log("Error in form submission:", err);
       if (err.message === "SERVER_ERROR") {
         errorMessage = "Le serveur est indisponible. Veuillez réessayer plus tard.";
       } else if (err.message === "EMAIL_EXISTS") {

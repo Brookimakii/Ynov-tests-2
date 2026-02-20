@@ -1,16 +1,6 @@
 import axios from "axios";
 
-
-const API_URL = process.env.REACT_APP_API_URL;
-const TOKEN = process.env.REACT_APP_API_TOKEN;
-
-const axiosInstance = axios.create({
-  baseURL: API_URL,
-  headers: {
-    Authorization: `Bearer ${TOKEN}`, // même si JSONPlaceholder ne le demande pas
-    "Content-Type": "application/json",
-  },
-});
+const API_URL = process.env.REACT_APP_API_URL || "https://jsonplaceholder.typicode.com/users";
 
 /**
  * Retrieves list of users from the API
@@ -19,7 +9,7 @@ const axiosInstance = axios.create({
  */
 export const getUsers = async () => {
     try {
-        const response = axiosInstance.get(API_URL);
+        const response = await axios.get(API_URL);
         return response.data;
     } catch (error) {
         if (error.response?.status >= 500) {
@@ -38,7 +28,7 @@ export const getUsers = async () => {
  */
 export const createUser = async (user) => {
     try {
-        const response = axiosInstance.post(API_URL, user);
+        const response = await axios.post(API_URL, user);
         return response.data;
     } catch (error) {
         // Business error: Email already exists

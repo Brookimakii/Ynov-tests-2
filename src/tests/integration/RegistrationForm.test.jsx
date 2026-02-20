@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import RegistrationForm from "../../components/RegistrationForm";
 import { toast } from "react-toastify";
 import * as userStorage from "../../utils/userStorage";
+import * as userAPI from "../../api/userAPI";
 
 jest.mock("react-toastify", () => ({
   ToastContainer: () => null,
@@ -11,6 +12,8 @@ jest.mock("react-toastify", () => ({
     error: jest.fn(),
   },
 }));
+
+jest.mock("../../api/userAPI");
 
 /**
  * Integration tests for RegistrationForm component
@@ -32,6 +35,7 @@ describe("RegistrationForm - Integration Tests", () => {
     jest.clearAllMocks();
     toast.success.mockClear();
     toast.error.mockClear();
+    userAPI.createUser.mockClear();
   });
 
   afterEach(() => {
@@ -249,12 +253,16 @@ describe("RegistrationForm - Integration Tests", () => {
   });
 
   /**
-   * Test: Form submission - localStorage spy, toast notification, form reset
+   * Test: Form submission with onSubmit callback (legacy test)
+   * Kept for backward compatibility with custom submit handlers
    */
-  test("should save to localStorage, show toast, and clear form on successful submit", async () => {
+  test("should submit form, call API, show toast, and clear form", async () => {
     const user = userEvent.setup();
-    const mockAddUser = jest.fn();
-    render(<RegistrationForm addUser={mockAddUser} />);
+    
+    // Mock API
+    const mockCreateUser = jest.spyOn(userAPI, "createUser").mockResolvedValueOnce({ id: 1 });
+
+    render(<RegistrationForm users={[]} />);
 
     const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
     const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
@@ -283,19 +291,17 @@ describe("RegistrationForm - Integration Tests", () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(localStorageSpy).toHaveBeenCalledWith("userData", expect.any(String));
+      expect(mockCreateUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "Marie",
+          lastName: "Martin",
+          email: "marie.martin@example.com",
+          birthDate: dateString,
+          postalCode: "69001",
+          city: "Lyon",
+        })
+      );
     });
-
-    const savedData = JSON.parse(localStorageSpy.mock.calls[0][1]);
-    expect(savedData).toMatchObject({
-      firstName: "Marie",
-      lastName: "Martin",
-      email: "marie.martin@example.com",
-      birthDate: dateString,
-      postalCode: "69001",
-      city: "Lyon",
-    });
-    expect(savedData).toHaveProperty("timestamp");
 
     expect(toast.success).toHaveBeenCalledWith(
       "Formulaire soumis avec succès !",
@@ -570,6 +576,327 @@ describe("RegistrationForm - Integration Tests", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Cet email est déjà utilisé/)).toBeInTheDocument();
+    });
+  });
+
+  /**
+   * ============================================
+   * API Integration Tests (with mocked axios)
+   * ============================================
+   */
+
+  /**
+   * Test: Successful user creation (201)
+   * Tests normal user flow with API success
+   */
+  test("should submit form successfully and display success toast on API success (201)", async () => {
+    const user = userEvent.setup();
+    render(<RegistrationForm />);
+
+    userAPI.createUser.mockResolvedValueOnce({
+      id: 11,
+      firstName: "Alice",
+      lastName: "Johnson",
+      email: "alice@example.com",
+      birthDate: "1995-03-20",
+      postalCode: "75003",
+      city: "Paris",
+    });
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    await user.type(firstNameInput, "Alice");
+    await user.type(lastNameInput, "Johnson");
+    await user.type(emailInput, "alice@example.com");
+
+    const birthDate = new Date();
+    birthDate.setFullYear(birthDate.getFullYear() - 29);
+    const dateString = birthDate.toISOString().split("T")[0];
+    await user.type(birthDateInput, dateString);
+
+    await user.type(postalCodeInput, "75003");
+    await user.type(cityInput, "Paris");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(userAPI.createUser).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "Alice",
+          lastName: "Johnson",
+          email: "alice@example.com",
+          postalCode: "75003",
+          city: "Paris",
+        })
+      );
+    });
+
+    expect(toast.success).toHaveBeenCalledWith(
+      "Formulaire soumis avec succès !",
+      expect.any(Object)
+    );
+
+    expect(firstNameInput).toHaveValue("");
+    expect(lastNameInput).toHaveValue("");
+    expect(emailInput).toHaveValue("");
+    expect(birthDateInput).toHaveValue("");
+    expect(postalCodeInput).toHaveValue("");
+    expect(cityInput).toHaveValue("");
+  });
+
+  /**
+   * Test: Business error - Email already exists (400)
+   * Verify that the specific backend error message is displayed
+   */
+  test("should display specific error message when email already exists (400)", async () => {
+    const user = userEvent.setup();
+    render(<RegistrationForm />);
+
+    userAPI.createUser.mockRejectedValueOnce(
+      new Error("Cet email est déjà utilisé")
+    );
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    await user.type(firstNameInput, "Bob");
+    await user.type(lastNameInput, "Smith");
+    await user.type(emailInput, "existing@example.com");
+
+    const birthDate = new Date();
+    birthDate.setFullYear(birthDate.getFullYear() - 25);
+    const dateString = birthDate.toISOString().split("T")[0];
+    await user.type(birthDateInput, dateString);
+
+    await user.type(postalCodeInput, "75001");
+    await user.type(cityInput, "Paris");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Cet email est déjà utilisé");
+    });
+
+    // Form should NOT be cleared on error
+    expect(firstNameInput).toHaveValue("Bob");
+    expect(emailInput).toHaveValue("existing@example.com");
+  });
+
+  /**
+   * Test: Default EMAIL_EXISTS error message when no custom message provided
+   */
+  test("should display default EMAIL_EXISTS message when backend sends 400 without message", async () => {
+    const user = userEvent.setup();
+    render(<RegistrationForm />);
+
+    userAPI.createUser.mockRejectedValueOnce(
+      new Error("EMAIL_EXISTS")
+    );
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    await user.type(firstNameInput, "Charlie");
+    await user.type(lastNameInput, "Brown");
+    await user.type(emailInput, "charlie@example.com");
+
+    const birthDate = new Date();
+    birthDate.setFullYear(birthDate.getFullYear() - 32);
+    const dateString = birthDate.toISOString().split("T")[0];
+    await user.type(birthDateInput, dateString);
+
+    await user.type(postalCodeInput, "75002");
+    await user.type(cityInput, "Lyon");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Cet email est déjà utilisé");
+    });
+  });
+
+  /**
+   * Test: Server crash (500)
+   * The application should not crash, but display a user alert
+   */
+  test("should display user-friendly error message and not crash on server error (500)", async () => {
+    const user = userEvent.setup();
+    render(<RegistrationForm />);
+
+    userAPI.createUser.mockRejectedValueOnce(
+      new Error("SERVER_ERROR")
+    );
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    await user.type(firstNameInput, "Diana");
+    await user.type(lastNameInput, "Prince");
+    await user.type(emailInput, "diana@example.com");
+
+    const birthDate = new Date();
+    birthDate.setFullYear(birthDate.getFullYear() - 28);
+    const dateString = birthDate.toISOString().split("T")[0];
+    await user.type(birthDateInput, dateString);
+
+    await user.type(postalCodeInput, "75004");
+    await user.type(cityInput, "Marseille");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Le serveur est indisponible. Veuillez réessayer plus tard."
+      );
+    });
+
+    // Application should not crash and form should remain visible
+    expect(screen.getByRole("form", { name: /user registration form/i })).toBeInTheDocument();
+
+    // Form data should be preserved on error
+    expect(firstNameInput).toHaveValue("Diana");
+    expect(emailInput).toHaveValue("diana@example.com");
+  });
+
+  /**
+   * Test: Network error or other unexpected error
+   * The application should gracefully handle any error
+   */
+  test("should handle network errors gracefully without crashing", async () => {
+    const user = userEvent.setup();
+    render(<RegistrationForm />);
+
+    userAPI.createUser.mockRejectedValueOnce(
+      new Error("Network error")
+    );
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    await user.type(firstNameInput, "Eve");
+    await user.type(lastNameInput, "Taylor");
+    await user.type(emailInput, "eve@example.com");
+
+    const birthDate = new Date();
+    birthDate.setFullYear(birthDate.getFullYear() - 27);
+    const dateString = birthDate.toISOString().split("T")[0];
+    await user.type(birthDateInput, dateString);
+
+    await user.type(postalCodeInput, "75005");
+    await user.type(cityInput, "Toulouse");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalled();
+    });
+
+    // Application should still be functional
+    expect(screen.getByRole("form", { name: /user registration form/i })).toBeInTheDocument();
+  });
+
+  /**
+   * Test: Multiple submissions should call API each time
+   */
+  test("should call API for each form submission", async () => {
+    const user = userEvent.setup();
+    render(<RegistrationForm />);
+
+    userAPI.createUser.mockResolvedValue({ id: 1 });
+
+    const firstNameInput = screen.getByRole("textbox", { name: /first name/i });
+    const lastNameInput = screen.getByRole("textbox", { name: /^last name\s*\*/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const birthDateInput = screen.getByLabelText(/birth date/i);
+    const postalCodeInput = screen.getByRole("textbox", { name: /postal code/i });
+    const cityInput = screen.getByRole("textbox", { name: /^city/i });
+    const submitButton = screen.getByRole("button", { name: /submit/i });
+
+    const birthDate = new Date();
+    birthDate.setFullYear(birthDate.getFullYear() - 30);
+    const dateString = birthDate.toISOString().split("T")[0];
+
+    // First submission
+    await user.type(firstNameInput, "Frank");
+    await user.type(lastNameInput, "Moore");
+    await user.type(emailInput, "frank@example.com");
+    await user.type(birthDateInput, dateString);
+    await user.type(postalCodeInput, "75006");
+    await user.type(cityInput, "Nice");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(userAPI.createUser).toHaveBeenCalledTimes(1);
+    });
+
+    // Form is now cleared, fill it again
+    await user.type(firstNameInput, "Grace");
+    await user.type(lastNameInput, "White");
+    await user.type(emailInput, "grace@example.com");
+    await user.type(birthDateInput, dateString);
+    await user.type(postalCodeInput, "75007");
+    await user.type(cityInput, "Nantes");
+
+    await waitFor(() => {
+      expect(submitButton).toBeEnabled();
+    });
+
+    // Second submission
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(userAPI.createUser).toHaveBeenCalledTimes(2);
     });
   });
 });

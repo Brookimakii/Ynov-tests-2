@@ -40,7 +40,7 @@ describe("userAPI - Integration Tests", () => {
         },
       ];
 
-      axios.get.mockResolvedValueOnce({ data: mockUsers });
+      axios.get.mockResolvedValueOnce({ status: 200, data: mockUsers });
 
       const result = await getUsers();
 
