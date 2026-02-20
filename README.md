@@ -15,6 +15,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
     - [Advanced Configuration](#advanced-configuration)
     - [Deployment](#deployment)
     - [`npm run build` fails to minify](#npm-run-build-fails-to-minify)
+  - [Les Mocks](#les-mocks)
 - [Liens](#liens)
 
 
@@ -84,6 +85,26 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+
+## Les Mocks
+
+Dans les tests E2E (cypress/e2e/), les appels API sont interceptés grâce à ```cy.intercept()```.
+Cela permet de modifier les comportement de l'API pour des tests sans avoir à modifier l'API elle-meme.
+
+On peux simuler des requête réussis (code 200/201), des erreurs métier, par exemple quand un email est déjà utilisé (code 400) ou des erreurs serveur (code 500).
+
+
+La ligne ```jest.mock("../../api/userAPI");``` Permet de simulé divers réponses API dans les tests.
+Ainsi on peut simulé les meme réponse API qu'avec Cypress.
+
+|Type de Retour| Jest | Cypress |
+|:-------------|:----|:------|
+| code 201     |```createUser.mockResolvedValue({ id: 1, email: "test@mail.com" });```|```cy.intercept("POST", API_URL, {statusCode: 201,body: {id: 12,...validUser,},}).as("createUser200");```|
+| code 400     |```createUser.mockRejectedValue(new Error("EMAIL_EXISTS"));```|```cy.intercept("POST", API_URL, {statusCode: 400,body: {error: "EMAIL_EXISTS",},}).as("emailExists");```|
+| code 500     |```createUser.mockRejectedValue(new Error("SERVER_ERROR"));```|```cy.intercept("POST", API_URL, {statusCode: 500,body: {error: "Internal Server Error",},}).as("serverError500")```|
+
+
 
 # Liens
 Lien du repo: https://github.com/Brookimakii/Ynov-tests-2/  
