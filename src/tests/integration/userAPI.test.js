@@ -3,6 +3,9 @@ import { getUsers, createUser } from "../../api/userAPI";
 
 jest.mock("axios");
 
+const API_URL = process.env.REACT_APP_API_URL || "https://jsonplaceholder.typicode.com/users";
+const API_TOKEN = process.env.REACT_APP_API_TOKEN;
+
 /**
  * Integration tests for userAPI
  * Tests API interactions with mocked axios
@@ -45,7 +48,11 @@ describe("userAPI - Integration Tests", () => {
       const result = await getUsers();
 
       expect(result).toEqual(mockUsers);
-      expect(axios.get).toHaveBeenCalledWith("https://jsonplaceholder.typicode.com/users");
+      expect(axios.get).toHaveBeenCalledWith(API_URL, {
+        headers: {
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+      });
       expect(axios.get).toHaveBeenCalledTimes(1);
     });
 
@@ -117,8 +124,13 @@ describe("userAPI - Integration Tests", () => {
 
       expect(result).toEqual(mockCreatedUser);
       expect(axios.post).toHaveBeenCalledWith(
-        "https://jsonplaceholder.typicode.com/users",
-        newUser
+        API_URL,
+        newUser,
+        {
+          headers: {
+            Authorization: `Bearer ${API_TOKEN}`,
+          },
+        }
       );
       expect(axios.post).toHaveBeenCalledTimes(1);
     });
