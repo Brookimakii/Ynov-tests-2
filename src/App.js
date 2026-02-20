@@ -4,10 +4,7 @@ import RegistrationForm from './components/RegistrationForm';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router';
 import HomePage from './pages/HomePage';
 import { useEffect, useState } from "react"
-import { loadUsers, saveUsers, addUser as addUserUtil } from './utils/userStorage';
-import { getUsers, createUser } from './api/userAPI';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { getUsers } from './api/userAPI';
 
 
 function App() {
