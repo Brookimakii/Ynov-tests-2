@@ -3,7 +3,7 @@ import { getUsers, createUser } from "../../api/userAPI";
 
 jest.mock("axios");
 
-const API_URL = process.env.REACT_APP_API_URL || "https://jsonplaceholder.typicode.com/users";
+const API_URL = process.env.REACT_APP_API_URL;
 const API_TOKEN = process.env.REACT_APP_API_TOKEN;
 
 /**
