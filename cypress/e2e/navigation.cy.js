@@ -1,4 +1,6 @@
 describe("Navigation Scenarios - E2E", () => {
+    const API_URL = "https://jsonplaceholder.typicode.com/users";
+
     const newUser = {
         firstName: "Foo",
         lastName: "Bar",
@@ -24,9 +26,25 @@ describe("Navigation Scenarios - E2E", () => {
 
     context("Scénario Nominal", ()=>{
         it('should add a valid user', () => {
+            // Mock successful API response
+            cy.intercept("GET", API_URL, {
+                statusCode: 200,
+                body: [],
+            }).as("getUsersEmpty");
+
+            
+            cy.intercept("POST", API_URL, {
+                statusCode: 201,
+                body: {
+                    id: 1,
+                    ...newUser,
+                    timestamp: new Date().toISOString(),
+                },
+            }).as("createUserSuccess");
 
             // Accueil
             cy.visit("/");
+            cy.wait("@getUsersEmpty");
             cy.contains("0 utilisateur inscrit");
             cy.get("#user-list").should("not.exist");
 
@@ -45,10 +63,27 @@ describe("Navigation Scenarios - E2E", () => {
 
             //Validation du formulaire
             cy.get("button[type='submit']").should("be.enabled").click();
+            
+            // Wait for API call
+            cy.wait("@createUserSuccess");
+            
             cy.get(".Toastify__toast").should("contain", "Formulaire soumis avec succès !");
             
             // Retour à l'accueil et vérification de l'ajout de l'utilisateur
+            
+            cy.intercept("GET", API_URL, {
+                statusCode: 200,
+                body: [
+                    {
+                        id: 1,
+                        ...newUser,
+                        timestamp: new Date().toISOString(),
+                    }
+                ],
+            }).as("getUsersWithOneUser");
+
             cy.visit("/");
+            cy.wait("@getUsersWithOneUser");
             cy.contains("1 utilisateur inscrit");
             cy.get("#user-list").should("exist");
             cy.get("#user-list").contains(newUser.firstName);
@@ -57,14 +92,13 @@ describe("Navigation Scenarios - E2E", () => {
     })
 
     context("Scénario d'Erreur", () => {
-        beforeEach(() => {
-            // Recréer l'état précédent avec 1 utilisateur
-            cy.visit("/");
-            cy.window().then((win) => {
-                win.localStorage.setItem("users", JSON.stringify([newUser]));
-            });
-        });
         it("Tentative d'ajout invalide par email déjà pris", () => {
+            // Mock 400 error when email exists
+            cy.intercept("POST", API_URL, {
+                statusCode: 400,
+                body: { message: "Cet email est déjà utilisé" },
+            }).as("emailExists");
+
             // Navigation vers formulaire
             cy.visit("/register");
 
@@ -77,20 +111,26 @@ describe("Navigation Scenarios - E2E", () => {
             cy.get("input[name='city']").type(newUser2.city);
 
             //Validation du formulaire
-            cy.get("button[type='submit']").should("be.disabled").click({ force: true });
+            cy.get("button[type='submit']").should("be.enabled").click();
+            
+            // Wait for API call
+            cy.wait("@emailExists");
 
             // Vérifier l'erreur
-            cy.get(".error-message").contains("Cet email est déjà utilisé").should("exist");
+            cy.get(".Toastify__toast--error").should("contain", "Cet email est déjà utilisé");
 
-            // Retour vers Accueil
-            cy.visit("/");
-
-            // Vérification Accueil toujours 1 utilisateur
-            cy.contains("1 utilisateur inscrit");
-            cy.get("#user-list").contains(newUser.firstName);
-            cy.get("#user-list").contains(newUser.lastName);
+            // Form data should be preserved
+            cy.get("input[name='firstName']").should("have.value", newUser2.firstName);
+            cy.get("input[name='email']").should("have.value", newUser.email);
         });
+
         it("Tentative d'ajout invalide par champ Ville vide", () => {
+            // Mock successful response but field is empty so validation should fail
+            cy.intercept("POST", API_URL, {
+                statusCode: 201,
+                body: { id: 12 },
+            }).as("createUser");
+
             // Navigation vers formulaire
             cy.visit("/register");
 
@@ -100,17 +140,15 @@ describe("Navigation Scenarios - E2E", () => {
             cy.get("input[name='email']").type(newUser2.email);
             cy.get("input[name='birthDate']").type(newUser2.birthDate.toISOString().split('T')[0]);
             cy.get("input[name='postalCode']").type(newUser2.postalCode);
+            // City field is NOT filled
 
-            //Validation du formulaire
+            //Validation du formulaire - button should be disabled
             cy.get("button[type='submit']").should("be.disabled").click({ force: true });
 
-            // Retour vers Accueil
-            cy.visit("/");
-
-            // Vérification Accueil toujours 1 utilisateur
-            cy.contains("1 utilisateur inscrit");
-            cy.get("#user-list").contains(newUser.firstName);
-            cy.get("#user-list").contains(newUser.lastName);
+            // API should NOT be called because form is invalid
+            cy.get("@createUser.all").then((interceptions) => {
+                expect(interceptions).to.have.length(0);
+            });
         });
     });
 })
