@@ -6,6 +6,19 @@ describe("userStorage utils", () => {
     jest.clearAllMocks();
   });
 
+  test("loadUsers returns null when no user is stored", () => {
+    expect(loadUsers()).toEqual([]);
+  });
+
+  test("loadUsers returns the saved users correctly", () => {
+    const mockUsers = [{ name: "A" }];
+    localStorage.setItem("users", JSON.stringify(mockUsers));
+
+    const loadedUsers = loadUsers();
+
+    expect(loadedUsers).toEqual(mockUsers);
+  });
+
   test("saveUsers stores users in localStorage and loadUsers retrieves them", () => {
     const users = [{ name: "A" }];
     saveUsers(users);
