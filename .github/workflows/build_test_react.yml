@@ -54,6 +54,9 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: build
+
+      - name: Authenticate with npm 
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
       
       - name: build and publish package on npm
         run: |
