@@ -99,15 +99,16 @@ jobs:
             echo "should_publish=false" >> $GITHUB_OUTPUT
             echo "should_publish=false"
           fi
-      # - name: Build for NPM
-      #   if: steps.version_check.outputs.should_publish == 'true'
-      #   run: npm run build-npm-ci
 
-      # - name: Publish to NPM
-      #   if: steps.version_check.outputs.should_publish == 'true'
-      #   run: npm publish
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build for NPM
+        if: steps.version_check.outputs.should_publish == 'true'
+        run: npm run build-npm-ci
+
+      - name: Publish to NPM
+        if: steps.version_check.outputs.should_publish == 'true'
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       
       - name: Create Git tag
         if: steps.version_check.outputs.should_publish == 'true'
