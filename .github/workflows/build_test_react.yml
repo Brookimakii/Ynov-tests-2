@@ -59,7 +59,7 @@ jobs:
         run: |
           git config --global user.email "kenzo.thomias@ynov.com"
           git config --global user.name "Kenzo Thomias"
-          npm run build-npm
+          npm run build-npm-ci
           npm version patch
           npm publish
           git add .
