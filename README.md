@@ -16,6 +16,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
     - [Deployment](#deployment)
     - [`npm run build` fails to minify](#npm-run-build-fails-to-minify)
   - [Les Mocks](#les-mocks)
+- [Déploiement NPM](#déploiement-npm)
 - [Liens](#liens)
 
 
@@ -104,6 +105,11 @@ Ainsi on peut simulé les meme réponse API qu'avec Cypress.
 | code 400     |```createUser.mockRejectedValue(new Error("EMAIL_EXISTS"));```|```cy.intercept("POST", API_URL, {statusCode: 400,body: {error: "EMAIL_EXISTS",},}).as("emailExists");```|
 | code 500     |```createUser.mockRejectedValue(new Error("SERVER_ERROR"));```|```cy.intercept("POST", API_URL, {statusCode: 500,body: {error: "Internal Server Error",},}).as("serverError500")```|
 
+# Déploiement NPM
+Commande de versioning:  
+```npm version patch``` → 1.0.0 → 1.0.1  
+```npm version minor``` → 1.0.1 → 1.1.0  
+```npm version major``` → 1.1.0 → 2.0.0
 
 
 # Liens
@@ -111,6 +117,7 @@ Lien du repo: https://github.com/Brookimakii/Ynov-tests-2/
 Lien du site: https://brookimakii.github.io/Ynov-tests-2/  
 Lien de la documentation: https://brookimakii.github.io/Ynov-tests-2/documentation  
 Lien du Codecov: https://app.codecov.io/github/Brookimakii/Ynov-tests-2/tree/master  
+Lien du package npm: https://www.npmjs.com/package/kenzo-h-thomias-integration-lecture-app
 
 ---
 

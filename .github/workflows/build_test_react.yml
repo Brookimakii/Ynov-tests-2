@@ -72,21 +72,26 @@ jobs:
 
       - name: Get local version
         id: local_version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          echo "version=$(node -p "require('./package.json').version")"
       
       - name: Get published version
         id: published_version
         run: |
           PUBLISHED=$(npm view ${{ github.repository }} version || echo "0.0.0")
           echo "version=$PUBLISHED" >> $GITHUB_OUTPUT
+          echo "version=$PUBLISHED"
 
       - name: Compare versions
         id: version_check
         run: |
           if [ "$(printf '%s\n' "${{ steps.published_version.outputs.version }}" "${{ steps.local_version.outputs.version }}" | sort -V | head -n1)" != "${{ steps.published_version.outputs.version }}" ]; then
             echo "should_publish=true" >> $GITHUB_OUTPUT
+            echo "should_publish=true"
           else
             echo "should_publish=false" >> $GITHUB_OUTPUT
+            echo "should_publish=false"
           fi
       - name: Build for NPM
         if: steps.version_check.outputs.should_publish == 'true'
