@@ -6,3 +6,7 @@
 /.github
 .env
 .gitignore
+src/tests/
+*log
+jest.config.js
+babel.config.js
