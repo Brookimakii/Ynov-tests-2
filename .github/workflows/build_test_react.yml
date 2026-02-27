@@ -61,6 +61,8 @@ jobs:
     steps:
 
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -97,15 +99,26 @@ jobs:
             echo "should_publish=false" >> $GITHUB_OUTPUT
             echo "should_publish=false"
           fi
-      - name: Build for NPM
-        if: steps.version_check.outputs.should_publish == 'true'
-        run: npm run build-npm-ci
+      # - name: Build for NPM
+      #   if: steps.version_check.outputs.should_publish == 'true'
+      #   run: npm run build-npm-ci
 
-      - name: Publish to NPM
+      # - name: Publish to NPM
+      #   if: steps.version_check.outputs.should_publish == 'true'
+      #   run: npm publish
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create Git tag
         if: steps.version_check.outputs.should_publish == 'true'
-        run: npm publish
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Skip message
         if: steps.version_check.outputs.should_publish == 'false'
