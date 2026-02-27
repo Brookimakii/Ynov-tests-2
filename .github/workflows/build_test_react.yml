@@ -90,7 +90,7 @@ jobs:
       - name: Compare versions
         id: version_check
         run: |
-          if [ "$(printf '%s\n' "${{ steps.published_version.outputs.version }}" "${{ steps.local_version.outputs.version }}" | sort -V | head -n1)" != "${{ steps.published_version.outputs.version }}" ]; then
+          if [ "$(printf '%s\n' "$PUBLISHED" "$LOCAL" | sort -V | he"ad -n1)" = "$PUBLISHED" ]; then
             echo "should_publish=true" >> $GITHUB_OUTPUT
             echo "should_publish=true"
           else
