@@ -1,0 +1,8 @@
+/node_modules
+/src
+/coverage
+/cypress
+/docs
+/.github
+.env
+.gitignore
