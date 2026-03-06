@@ -2,12 +2,12 @@
 
 import os
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import mysql.connector
 
-load_dotenv()
+# load_dotenv()
 
 app = FastAPI()
 origins = ["*"]
