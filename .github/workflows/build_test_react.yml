@@ -199,7 +199,7 @@ jobs:
 
       - name: Test /users endpoint
         run: |
-          RESPONSE=$(curl 172.17.0.1:8000/users)
+          RESPONSE=$(curl -w "%{http_code}" 172.17.0.1:8000/users)
           echo "HTTP response code: $RESPONSE"
           if [ "$RESPONSE" != "200" ]; then
             echo "API /users endpoint failed"
