@@ -177,20 +177,26 @@ jobs:
             -e MYSQL_HOST=172.17.0.1 \
             -p 8000:8000 \
             user_api
+      
+      - name: Wait for API
+        run: |
+          echo "Waiting for API..."
+          for i in {1..30}; do
+            sleep 1
 
       - name: debug containers
         run: docker ps -a
-      # - name: debug containers
-      #   run: curl 172.17.0.1:8000/users
+      - name: debug containers
+        run: curl 172.17.0.1:8000/users
 
-      # - name: Test /users endpoint
-      #   run: |
-      #     RESPONSE=$(curl 172.17.0.1:8000/users)
-      #     echo "HTTP response code: $RESPONSE"
-      #     if [ "$RESPONSE" != "200" ]; then
-      #       echo "API /users endpoint failed"
-      #       exit 1
-          # fi
+      - name: Test /users endpoint
+        run: |
+          RESPONSE=$(curl 172.17.0.1:8000/users)
+          echo "HTTP response code: $RESPONSE"
+          if [ "$RESPONSE" != "200" ]; then
+            echo "API /users endpoint failed"
+            exit 1
+          fi
       
       - name: Login to Docker Hub
         uses: docker/login-action@v3
