@@ -183,6 +183,7 @@ jobs:
           echo "Waiting for API..."
           for i in {1..30}; do
             sleep 1
+          done
 
       - name: debug containers
         run: docker ps -a
