@@ -140,7 +140,7 @@ jobs:
       #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker-test:
-    # needs: publish-npm
+    needs: publish-npm
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
