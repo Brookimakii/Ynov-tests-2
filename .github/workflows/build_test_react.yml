@@ -179,7 +179,7 @@ jobs:
             user_api
 
       - name: debug containers
-        run: dockzer ps -a
+        run: docker ps -a
 
       - name: Test /users endpoint
         run: |
