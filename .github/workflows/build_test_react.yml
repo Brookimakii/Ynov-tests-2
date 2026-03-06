@@ -174,18 +174,18 @@ jobs:
             --name api-test \
             -e MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
             -e MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
-            -e MYSQL_HOST=host.docker.internal \
+            -e MYSQL_HOST=172.17.0.1 \
             -p 8000:8000 \
             user_api
 
       - name: debug containers
         run: docker ps -a
       - name: debug containers
-        run: curl localhost:8000/users
+        run: curl 172.17.0.1:8000/users
 
       - name: Test /users endpoint
         run: |
-          RESPONSE=$(curl localhost:8000/users)
+          RESPONSE=$(curl 172.17.0.1:8000/users)
           echo "HTTP response code: $RESPONSE"
           if [ "$RESPONSE" != "200" ]; then
             echo "API /users endpoint failed"
