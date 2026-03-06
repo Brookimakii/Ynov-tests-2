@@ -140,7 +140,7 @@ jobs:
       #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker-test:
-    needs: publish-npm
+    # needs: publish-npm
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -177,7 +177,7 @@ jobs:
             -e MYSQL_HOST=host.docker.internal \
             -p 8000:8000 \
             user_api
-            
+
       - name: debug containers
         run: dockzer ps -a
 
@@ -205,7 +205,7 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/migration_mysql:latest
 
   deploy:
-    needs: publish-npm
+    needs: docker-test
     permissions:
       pages: write
       id-token: write
