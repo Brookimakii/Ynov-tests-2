@@ -164,7 +164,7 @@ jobs:
         run: |
           echo "Waiting for MySQL..."
           for i in {1..30}; do
-            docker exec test-migration mysqladmin ping -h "host.docker.internal" --silent && break
+            docker exec mysql-test mysqladmin ping -h "host.docker.internal" --silent && break
             sleep 2
           done
 
