@@ -200,12 +200,11 @@ jobs:
 
       - name: Push API image to Docker Hub
         run: |
-          docker tag test-api ${{ secrets.DOCKER_USERNAME }}/user_api:latest
-          docker tag test-migration ${{ secrets.DOCKER_USERNAME }}/migration_mysql:latest
+          docker tag api-test ${{ secrets.DOCKER_USERNAME }}/user_api:0.1.0
+          docker tag test-migration ${{ secrets.DOCKER_USERNAME }}/migration_mysql:0.1.0
 
-          docker push ${{ secrets.DOCKER_USERNAME }}/user_api:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/migration_mysql:latest
-
+          docker push ${{ secrets.DOCKER_USERNAME }}/user_api:0.1.0
+          docker push ${{ secrets.DOCKER_USERNAME }}/migration_mysql:0.1.0
   deploy:
     needs: docker-test
     permissions:
