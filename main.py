@@ -21,13 +21,14 @@ app.add_middleware(
 )
 
 print(os.getenv("MYSQL_DATABASE"))
+print(os.getenv("MYSQL_USER"))
 print(os.getenv("MYSQL_ROOT_PASSWORD"))
 print(os.getenv("MYSQL_HOST"))
 
 
 conn = mysql.connector.connect(
     database=os.getenv("MYSQL_DATABASE"),
-    user="root",
+    user=os.getenv("MYSQL_USER"),
     password=os.getenv("MYSQL_ROOT_PASSWORD"),
     host=os.getenv("MYSQL_HOST"),
     port=3306
