@@ -180,10 +180,12 @@ jobs:
 
       - name: debug containers
         run: docker ps -a
+      - name: debug containers
+        run: curl localhost:8000/users
 
       - name: Test /users endpoint
         run: |
-          RESPONSE=$(curl -s -o response.json -w "%{http_code}" http://localhost:8000/users)
+          RESPONSE=$(curl localhost:8000/users)
           echo "HTTP response code: $RESPONSE"
           if [ "$RESPONSE" != "200" ]; then
             echo "API /users endpoint failed"
