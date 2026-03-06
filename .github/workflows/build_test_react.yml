@@ -177,6 +177,9 @@ jobs:
             -e MYSQL_HOST=host.docker.internal \
             -p 8000:8000 \
             user_api
+            
+      - name: debug containers
+        run: dockzer ps -a
 
       - name: Test /users endpoint
         run: |
