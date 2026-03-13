@@ -20,12 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-print(os.getenv("MYSQL_DATABASE"))
-print(os.getenv("MYSQL_USER"))
-print(os.getenv("MYSQL_ROOT_PASSWORD"))
-print(os.getenv("MYSQL_HOST"))
-
-
 conn = mysql.connector.connect(
     database=os.getenv("MYSQL_DATABASE"),
     user=os.getenv("MYSQL_USER"),

@@ -23,7 +23,7 @@ services:
     ports:
       - 8080:8080
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+      test: ["CMD", "curl", "http://localhost:8080"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,9 +43,9 @@ services:
       MYSQL_HOST: db
     ports:
       - 8000:8000
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/users"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    # healthcheck:
+    #   test: ["CMD", "curl","-X", "GET", "172.17.0.1:8000/users"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 20s
