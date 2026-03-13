@@ -140,51 +140,14 @@ jobs:
       #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker-test:
-    needs: publish-npm
+    # needs: publish-npm
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Build mysql image
-        run: docker build -t test-migration .  
-
-      - name: Build API image
-        run: docker build -t user_api -f python.Dockerfile .
-
-      - name: Start MySQL container
-        run: |
-          docker run -d \
-            --name mysql-test \
-            -e MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
-            -p 3306:3306 \
-            test-migration
-
-      - name: Wait for MySQL
-        run: |
-          echo "Waiting for MySQL..."
-          for i in {1..30}; do
-            docker exec mysql-test mysqladmin ping -h "host.docker.internal" --silent && break
-            sleep 1
-          done
-
-      - name: Start API container
-        run: |
-          docker run -d \
-            --name api-test \
-            -e MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
-            -e MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }} \
-            -e MYSQL_USER=${{ secrets.MYSQL_USER }} \
-            -e MYSQL_HOST=172.17.0.1 \
-            -p 8000:8000 \
-            user_api
-      
-      - name: Wait for API
-        run: |
-          echo "Waiting for API..."
-          for i in {1..10}; do
-            sleep 1
-          done
+        run: docker compose up -d --build
 
       - name: debug containers
         run: docker ps -a
@@ -196,6 +159,28 @@ jobs:
 
       - name: debug containers
         run: curl 172.17.0.1:8000/users
+
+      - name: Wait for containers to become healthy
+        run: |
+          echo "Waiting for containers to be healthy..."
+
+          for i in {1..30}; do
+            unhealthy=$(docker compose ps --format json | jq -r '.Health' | grep -v healthy || true)
+
+            if [ -z "$unhealthy" ]; then
+              echo "All containers are healthy!"
+              docker compose ps
+              exit 0
+            fi
+
+            echo "Containers not healthy yet..."
+            sleep 5
+          done
+
+          echo "Some containers failed to become healthy"
+          docker compose ps
+          docker compose logs
+          exit 1
 
       - name: Test /users endpoint
         run: |
