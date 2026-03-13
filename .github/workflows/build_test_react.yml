@@ -142,6 +142,11 @@ jobs:
   docker-test:
     # needs: publish-npm
     runs-on: ubuntu-latest
+    env:
+      MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+      MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+      MYSQL_USER: ${{ secrets.MYSQL_USER }}
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
