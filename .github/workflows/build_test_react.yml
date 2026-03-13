@@ -140,7 +140,7 @@ jobs:
       #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker-test:
-    # needs: publish-npm
+    needs: publish-npm
     runs-on: ubuntu-latest
     env:
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
@@ -153,31 +153,15 @@ jobs:
 
       - name: Build mysql image
         run: docker compose up -d --build
-
-      - name: debug containers
-        run: docker ps -a
       
-      - name: Wait for containers to become healthy
-        run: |
-          echo "Waiting for containers to be healthy..."
-
-          for i in {1..30}; do
-            unhealthy=$(docker compose ps --format json | jq -r '.Health' | grep -v healthy || true)
-
-            if [ -z "$unhealthy" ]; then
-              echo "All containers are healthy!"
-              docker compose ps
-              exit 0
-            fi
-
-            echo "Containers not healthy yet..."
-            sleep 5
-          done
-
-          echo "Some containers failed to become healthy"
-          docker compose ps
-          docker compose logs
-          exit 1
+      - name: Check service health
+        uses: jaracogmbh/docker-compose-health-check-action@v1.0.0
+        with:
+          max-retries: 30
+          retry-interval: 10
+          compose-file: "docker-compose.yml"
+          skip-exited: "true"
+          skip-no-healthcheck: "true"
 
       - name: Test /users endpoint
         run: |
