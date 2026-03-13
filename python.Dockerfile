@@ -7,6 +7,7 @@ COPY ./requirements.txt .
 COPY ./main.py .
 
 RUN pip install --no-cache-dir -r requirements.txt
+RUN apk add --no-cache curl
 
 EXPOSE 8080
 
