@@ -152,14 +152,6 @@ jobs:
       - name: debug containers
         run: docker ps -a
       
-      - name: debug containers
-        run: |
-          docker logs api-test
-          docker logs mysql-test
-
-      - name: debug containers
-        run: curl 172.17.0.1:8000/users
-
       - name: Wait for containers to become healthy
         run: |
           echo "Waiting for containers to be healthy..."
@@ -204,6 +196,18 @@ jobs:
 
           docker push ${{ secrets.DOCKER_USERNAME }}/user_api:0.1.0
           docker push ${{ secrets.DOCKER_USERNAME }}/migration_mysql:0.1.0
+
+      - name: Debug containers
+        if: failure()
+        run: |
+          docker compose ps
+          echo "------ DB LOGS ------"
+          docker compose logs db
+          echo "------ API LOGS ------"
+          docker compose logs api
+          echo "------ ADMINER LOGS ------"
+          docker compose logs adminer
+    
   deploy:
     needs: docker-test
     permissions:
