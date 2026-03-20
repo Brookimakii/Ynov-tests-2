@@ -49,3 +49,25 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+  react: 
+    build:
+      context: .
+      dockerfile: react.Dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      - REACT_APP_SERVER_PORT=8000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      api: 
+        condition: service_healthy
+    command: npm start
+    healthcheck:
+      test: ["CMD", "curl","http://localhost:3000/users"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
