@@ -15,6 +15,15 @@ class Login(BaseModel):
     password: str
 
 
+class User(BaseModel):
+    firstName: str
+    lastName: str
+    email: str
+    birthDate: str
+    postalCode: str
+    city: str
+
+
 app = FastAPI()
 origins = [
     "https://loise.github.io/",
@@ -43,16 +52,64 @@ conn = mysql.connector.connect(
 @app.get("/users")
 async def get_users():
     # Create a connection to the database
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     sql_select_Query = "select * from utilisateur"
     cursor.execute(sql_select_Query)
     # get all records
     records = cursor.fetchall()
     # renvoyer nos données et 200 code OK
-    return {'utilisateurs': records}
+    return records
+
+@app.post("/users")
+async def create_user(user: User):
+    cursor = conn.cursor()
+    try:
+        # Check if email already exists
+        check_email_query = "select id from utilisateur WHERE email = %s"
+        cursor.execute(check_email_query, (user.email,))
+        if cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already exists",
+            )
+        
+        # Insert new user
+        insert_query = """
+            INSERT INTO utilisateur (firstName, lastName, email, birthDate, postalCode, city)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(insert_query, (
+            user.firstName,
+            user.lastName,
+            user.email,
+            user.birthDate,
+            user.postalCode,
+            user.city
+        ))
+        conn.commit()
+        
+        return {
+            "id": cursor.lastrowid,
+            "firstName": user.firstName,
+            "lastName": user.lastName,
+            "email": user.email,
+            "birthDate": user.birthDate,
+            "postalCode": user.postalCode,
+            "city": user.city
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+    finally:
+        cursor.close()
 
 @app.post("/login")
-async def create_user(login: Login):
+async def login(login: Login):
     cursor = conn.cursor()
     email = login.email
     password = login.password

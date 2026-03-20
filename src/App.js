@@ -30,7 +30,7 @@ function App() {
   if (loading) {
     return <p>Chargement...</p>;
   }
-
+  console.log("Users in App:", users);
   return (
     <Router>
       {/* istanbul ignore next */}

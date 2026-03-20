@@ -3,7 +3,7 @@
 
 describe('Home page spec', () => {
     it('deployed react app to localhost', () => {
-        cy.visit('http://localhost:3000/Ynov-tests-2');
+        cy.visit('http://localhost:3000');
         // cy.contains("1 user(s) already registered");
     })
 })

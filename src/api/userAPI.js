@@ -10,11 +10,8 @@ const API_TOKEN = process.env.REACT_APP_API_TOKEN
  */
 export const getUsers = async () => {
     try {
-        const response = await axios.get(API_URL, {
-            headers: {
-                Authorization: `Bearer ${API_TOKEN}`,
-            },
-        });
+        const response = await axios.get(API_URL+"/users");
+        console.log("API Response:", response);
         return response.data;
     } catch (error) {
         if (error.response?.status >= 500) {
@@ -33,11 +30,7 @@ export const getUsers = async () => {
  */
 export const createUser = async (user) => {
     try {
-        const response = await axios.post(API_URL, user, {
-            headers: {
-                Authorization: `Bearer ${API_TOKEN}`,
-            },
-        });
+        const response = await axios.post(API_URL+"/users", user);
         return response.data;
     } catch (error) {
         // Business error: Email already exists
