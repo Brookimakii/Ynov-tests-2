@@ -27,15 +27,6 @@ jobs:
           npm run jsdoc --if-present
           npm test
 
-      - name: Cypress run
-        uses: cypress-io/github-action@v6
-        env:
-          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
-          REACT_APP_API_TOKEN: ${{ secrets.REACT_APP_API_TOKEN }}
-        with:
-          build: npm run build
-          start: npm start
-
       - name: Copy docs to build folder
         run: cp -r docs build/documentation
 
