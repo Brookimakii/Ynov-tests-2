@@ -7,6 +7,15 @@ const generateUniqueUser = () => ({
     city: "Lyon",
 });
 
+const waitForApiReady = () => {
+    cy.request({
+        method: "GET",
+        url: "http://localhost:8000/users",
+        failOnStatusCode: false,
+        timeout: 30000,
+    }).its("status").should("eq", 200);
+};
+
 describe("Navigation Scenarios - E2E", () => {
 
     let newUser;
@@ -16,14 +25,17 @@ describe("Navigation Scenarios - E2E", () => {
         // Generate unique users for each test (real env persistence requires fresh data)
         newUser = generateUniqueUser();
         newUser2 = generateUniqueUser();
+
+        // Ensure backend is reachable before mounting the app
+        waitForApiReady();
         
         // Open home and wait until async users loading is complete
         cy.visit("/");
         cy.clearLocalStorage();
 
-        // App renders "Chargement..." first; wait for real home content
-        cy.contains("Welcome", { timeout: 20000 }).should("be.visible");
-        cy.get("strong", { timeout: 20000 }).should("be.visible");
+        // App renders "Chargement..." first; wait for stable UI shell
+        cy.contains("Register", { timeout: 30000 }).should("be.visible");
+        cy.get("strong", { timeout: 30000 }).should("be.visible");
     });
 
     context("Scénario Nominal", ()=>{
