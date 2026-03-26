@@ -244,6 +244,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Fix workspace permissions
+        run: |
+          sudo chown -R runner:runner "$GITHUB_WORKSPACE"
+          sudo rm -rf "$GITHUB_WORKSPACE/node_modules"
+
       - name: Install dependencies
         run: npm ci
 
@@ -257,7 +262,6 @@ jobs:
           wait-on: "http://localhost:3000"
           wait-on-timeout: 60
           spec: "cypress/e2e/**/*.cy.js"
-          headless: true
           browser: chrome
         env:
           REACT_APP_API_URL: http://localhost:8000
@@ -306,7 +310,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deploy-to-pages.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
