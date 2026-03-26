@@ -244,6 +244,11 @@ jobs:
         with:
           node-version: 20
 
+      - name: Clean and fix permissions
+        run: |
+          rm -rf node_modules package-lock.json
+          sudo chown -R runner:runner . || true
+
       - name: Install dependencies
         run: npm ci
 
