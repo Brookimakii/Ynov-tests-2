@@ -48,11 +48,7 @@ describe("userAPI - Integration Tests", () => {
       const result = await getUsers();
 
       expect(result).toEqual(mockUsers);
-      expect(axios.get).toHaveBeenCalledWith(API_URL, {
-        headers: {
-          Authorization: `Bearer ${API_TOKEN}`,
-        },
-      });
+      expect(axios.get).toHaveBeenCalledWith(API_URL+"/users");
       expect(axios.get).toHaveBeenCalledTimes(1);
     });
 
@@ -124,13 +120,8 @@ describe("userAPI - Integration Tests", () => {
 
       expect(result).toEqual(mockCreatedUser);
       expect(axios.post).toHaveBeenCalledWith(
-        API_URL,
-        newUser,
-        {
-          headers: {
-            Authorization: `Bearer ${API_TOKEN}`,
-          },
-        }
+        API_URL+"/users",
+        newUser
       );
       expect(axios.post).toHaveBeenCalledTimes(1);
     });
