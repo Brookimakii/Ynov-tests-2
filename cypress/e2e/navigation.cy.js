@@ -17,12 +17,13 @@ describe("Navigation Scenarios - E2E", () => {
         newUser = generateUniqueUser();
         newUser2 = generateUniqueUser();
         
-        // Clear localStorage before each top-level test run
+        // Open home and wait until async users loading is complete
         cy.visit("/");
         cy.clearLocalStorage();
-        
-        // Wait for API to load users data
-        cy.get("strong", { timeout: 5000 }).should("exist");
+
+        // App renders "Chargement..." first; wait for real home content
+        cy.contains("Welcome", { timeout: 20000 }).should("be.visible");
+        cy.get("strong", { timeout: 20000 }).should("be.visible");
     });
 
     context("Scénario Nominal", ()=>{
@@ -30,6 +31,7 @@ describe("Navigation Scenarios - E2E", () => {
             let initialCount;
             // Accueil
             cy.visit("/");
+            cy.get("strong", { timeout: 20000 }).should("be.visible");
             
             cy.get("strong").then(($strong) => {
                 initialCount = parseInt($strong.text());
@@ -37,8 +39,9 @@ describe("Navigation Scenarios - E2E", () => {
             });
 
             // Navigation vers le formulaire d'inscription
-            cy.contains("Register").click();
+            cy.contains("Register", { timeout: 20000 }).click();
             cy.url().should("include", "/register");
+            cy.get("input[name='firstName']", { timeout: 20000 }).should("be.visible");
 
             
             // Remplissage du formulaire valide

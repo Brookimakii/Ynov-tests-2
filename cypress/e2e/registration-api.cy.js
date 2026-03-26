@@ -34,8 +34,13 @@ describe("Registration Form E2E - With API Mocking", () => {
     // Generate unique user for each test
     validUser = generateUniqueUser();
     anotherUser = generateUniqueUser();
-    
-    cy.visit("/register");
+
+    // Wait for app bootstrap and navigate once data is loaded
+    cy.visit("/");
+    cy.contains("Register", { timeout: 20000 }).click();
+    cy.url().should("include", "/register");
+    cy.get("form.user-form", { timeout: 20000 }).should("be.visible");
+    cy.get("input[name='firstName']", { timeout: 20000 }).should("be.visible");
   });
 
   describe("Success Scenario (201) - Normal user flow", () => {
