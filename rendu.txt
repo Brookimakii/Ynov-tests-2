@@ -1,2 +1,3 @@
 Lien Github: https://github.com/Brookimakii/Ynov-tests-2
-Lien Docker Hub: https://hub.docker.com/u/tkenzo
+
+J'ai pour le moment l'impossibilité de faire fonctionner les tests e2e dans github action mais ceux-ci fonctionnent en local.
