@@ -227,34 +227,6 @@ jobs:
           skip-exited: "true"
           skip-no-healthcheck: "true"
 
-      - name: Verify API endpoint
-        run: |
-          for i in {1..30}; do
-            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$E2E_API_URL/users" || echo "000")
-            if [ "$RESPONSE" = "200" ]; then
-              echo "API is ready!"
-              exit 0
-            fi
-            echo "Attempt $i: API returned $RESPONSE, retrying..."
-            sleep 2
-          done
-          echo "API failed to respond after 60 seconds"
-          exit 1
-
-      - name: Verify frontend endpoint (Docker)
-        run: |
-          for i in {1..30}; do
-            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$E2E_WEB_URL" || echo "000")
-            if [ "$RESPONSE" = "200" ]; then
-              echo "Frontend is ready!"
-              exit 0
-            fi
-            echo "Attempt $i: Frontend returned $RESPONSE, retrying..."
-            sleep 2
-          done
-          echo "Frontend failed to respond after 60 seconds"
-          exit 1
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -268,48 +240,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Cypress E2E tests (@database-up)
-        uses: cypress-io/github-action@v6
-        with:
-          install: false
-          wait-on: ${{ env.E2E_WEB_URL }}
-          wait-on-timeout: 120
-          command: npx cypress run --expose grepTags="@database-up"
-        env:
-          CYPRESS_baseUrl: ${{ env.E2E_WEB_URL }}
-          REACT_APP_API_URL: ${{ env.E2E_API_URL }}
-          REACT_APP_API_TOKEN: ${{ secrets.REACT_APP_API_TOKEN }}
+      - name: Run Cypress E2E tests 
+        run: | 
+          cd my-app
+          docker ps  
 
-      - name: Stop database service
-        run: docker compose stop db
+          npx cypress run --expose grepTags="@database-up"
 
-      - name: Verify DB is stopped
-        run: |
-          if docker compose ps db | grep -qi "running"; then
-            echo "Database is still running"
-            exit 1
-          fi
-          echo "Database is stopped"
-
-      - name: Run Cypress E2E tests (@database-down)
-        uses: cypress-io/github-action@v6
-        with:
-          install: false
-          wait-on: ${{ env.E2E_WEB_URL }}
-          wait-on-timeout: 120
-          command: npx cypress run --expose grepTags="@database-down"
-        env:
-          CYPRESS_baseUrl: ${{ env.E2E_WEB_URL }}
-          REACT_APP_API_URL: ${{ env.E2E_API_URL }}
-          REACT_APP_API_TOKEN: ${{ secrets.REACT_APP_API_TOKEN }}
-
-      - name: Upload Cypress videos
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: cypress-videos
-          path: cypress/videos
-          retention-days: 7
+          docker compose down api
+          
+          npx cypress run --expose grepTags='@database-down'
 
       - name: Upload failed test PNG artifacts
         uses: actions/upload-artifact@v4
