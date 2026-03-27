@@ -274,7 +274,7 @@ jobs:
           install: false
           wait-on: ${{ env.E2E_WEB_URL }}
           wait-on-timeout: 120
-          command: npx cypress run --spec cypress/e2e/**/*.cy.js --expose grepTags="@database-up" --browser chrome
+          command: npx cypress run --spec cypress/e2e/**/*.cy.js --env grepTags=@database-up --browser chrome
         env:
           CYPRESS_baseUrl: ${{ env.E2E_WEB_URL }}
           REACT_APP_API_URL: ${{ env.E2E_API_URL }}
@@ -297,7 +297,7 @@ jobs:
           install: false
           wait-on: ${{ env.E2E_WEB_URL }}
           wait-on-timeout: 120
-          command: npx cypress run --spec cypress/e2e/**/*.cy.js --expose grepTags="@database-down" --browser chrome
+          command: npx cypress run --spec cypress/e2e/**/*.cy.js --env grepTags=@database-down --browser chrome
         env:
           CYPRESS_baseUrl: ${{ env.E2E_WEB_URL }}
           REACT_APP_API_URL: ${{ env.E2E_API_URL }}

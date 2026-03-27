@@ -64,7 +64,7 @@ services:
     depends_on:
       api: 
         condition: service_healthy
-    command: npm start
+    command: sh -c "npm ci && npm start"
     healthcheck:
       test: ["CMD", "curl","http://localhost:3000/users"]
       interval: 10s
