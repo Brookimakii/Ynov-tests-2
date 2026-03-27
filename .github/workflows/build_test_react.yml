@@ -194,8 +194,6 @@ jobs:
           docker compose logs db
           echo "------ API LOGS ------"
           docker compose logs api
-          echo "------ ADMINER LOGS ------"
-          docker compose logs adminer
 
   e2e-tests:
     needs: docker-test
