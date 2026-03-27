@@ -1,4 +1,5 @@
-FROM python:3.11-alpine
+FROM public.ecr.aws/docker/library/python:3.11-alpine
+# FROM python:3.11-alpine
 
 WORKDIR /app
 
