@@ -18,6 +18,16 @@ const add_validUser = (user) => {
     cy.get("button[type='submit']").click();
     cy.get(".Toastify__toast--success").should("be.visible");
 }
+
+const waitForApiReady = () => {
+    cy.request({
+        method: "GET",
+        url: "http://localhost:8000/users",
+        failOnStatusCode: false,
+        timeout: 30000,
+    }).its("status").should("eq", 200);
+};
+
 /**
  * E2E Tests with API Mocking using cy.intercept
  * Tests the RegistrationForm with mocked JSONPlaceholder API
@@ -35,10 +45,13 @@ describe("Registration Form E2E - With API Mocking", () => {
     validUser = generateUniqueUser();
     anotherUser = generateUniqueUser();
 
+    // Ensure backend is reachable before loading the app
+    waitForApiReady();
+
     // Load registration page directly to avoid flaky nav timing
     cy.visit("/register");
     cy.url().should("include", "/register");
-    cy.get("form.user-form", { timeout: 30000 }).should("be.visible");
+    cy.get(".user-form", { timeout: 30000 }).should("be.visible");
     cy.get("input[name='firstName']", { timeout: 30000 }).should("be.visible");
   });
 

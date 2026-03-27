@@ -26,16 +26,18 @@ describe("Navigation Scenarios - E2E", () => {
         newUser = generateUniqueUser();
         newUser2 = generateUniqueUser();
 
+        // Clear storage before mounting app
+        cy.clearLocalStorage();
+        
         // Ensure backend is reachable before mounting the app
         waitForApiReady();
         
-        // Open home and wait until async users loading is complete
-        cy.visit("/");
-        cy.clearLocalStorage();
-
-        // App renders "Chargement..." first; wait for stable UI shell
-        cy.contains("Register", { timeout: 30000 }).should("be.visible");
-        cy.get("strong", { timeout: 30000 }).should("be.visible");
+        // Load home page and wait for app shell to render
+        cy.visit("/", { timeout: 60000 });
+        
+        // Wait for nav bar to appear (more stable than text-based selectors)
+        cy.get("nav", { timeout: 60000 }).should("exist");
+        cy.get("strong", { timeout: 60000 }).should("be.visible");
     });
 
     context("Scénario Nominal", ()=>{
