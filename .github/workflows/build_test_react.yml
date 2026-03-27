@@ -144,7 +144,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build mysql image
+      - name: Build images and start containers
         run: docker compose up -d --build
       
       - name: Check service health
