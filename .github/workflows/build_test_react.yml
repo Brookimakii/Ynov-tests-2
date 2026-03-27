@@ -240,7 +240,7 @@ jobs:
 
       - name: Run Cypress E2E tests 
         run: | 
-          cd my-app
+          ls
           docker ps  
 
           npx cypress run --expose grepTags="@database-up"
