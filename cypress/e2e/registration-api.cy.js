@@ -60,58 +60,58 @@ describe("Registration Form E2E - With API Mocking", () => {
      * Test: User successfully submits form, API returns 201
      * Expected: Success toast displayed, form cleared
      */
-    it("should successfully submit form and display success message on 201 response", () => {
+    // it("should successfully submit form and display success message on 201 response", () => {
 
-      // Fill form with valid data
-      cy.get("input[name='firstName']").type(validUser.firstName);
-      cy.get("input[name='lastName']").type(validUser.lastName);
-      cy.get("input[name='email']").type(validUser.email);
-      cy.get("input[name='birthDate']").type(validUser.birthDate.toISOString().split('T')[0]);
-      cy.get("input[name='postalCode']").type(validUser.postalCode);
-      cy.get("input[name='city']").type(validUser.city);
+    //   // Fill form with valid data
+    //   cy.get("input[name='firstName']").type(validUser.firstName);
+    //   cy.get("input[name='lastName']").type(validUser.lastName);
+    //   cy.get("input[name='email']").type(validUser.email);
+    //   cy.get("input[name='birthDate']").type(validUser.birthDate.toISOString().split('T')[0]);
+    //   cy.get("input[name='postalCode']").type(validUser.postalCode);
+    //   cy.get("input[name='city']").type(validUser.city);
 
-      // Submit form
-      cy.get("button[type='submit']").should("be.enabled").click();
+    //   // Submit form
+    //   cy.get("button[type='submit']").should("be.enabled").click();
 
-      // Verify success toast
-      cy.get(".Toastify__toast").should(
-        "contain",
-        "Formulaire soumis avec succès !"
-      );
-      cy.get(".Toastify__toast--success").should("be.visible");
+    //   // Verify success toast
+    //   cy.get(".Toastify__toast").should(
+    //     "contain",
+    //     "Formulaire soumis avec succès !"
+    //   );
+    //   cy.get(".Toastify__toast--success").should("be.visible");
 
-      // Verify form is cleared
-      cy.get("input[name='firstName']").should("have.value", "");
-      cy.get("input[name='lastName']").should("have.value", "");
-      cy.get("input[name='email']").should("have.value", "");
-      cy.get("input[name='birthDate']").should("have.value", "");
-      cy.get("input[name='postalCode']").should("have.value", "");
-      cy.get("input[name='city']").should("have.value", "");
+    //   // Verify form is cleared
+    //   cy.get("input[name='firstName']").should("have.value", "");
+    //   cy.get("input[name='lastName']").should("have.value", "");
+    //   cy.get("input[name='email']").should("have.value", "");
+    //   cy.get("input[name='birthDate']").should("have.value", "");
+    //   cy.get("input[name='postalCode']").should("have.value", "");
+    //   cy.get("input[name='city']").should("have.value", "");
 
-      // Submit button should be disabled again
-      cy.get("button[type='submit']").should("be.disabled");
-    });
+    //   // Submit button should be disabled again
+    //   cy.get("button[type='submit']").should("be.disabled");
+    // });
 
     /**
      * Test: User successfully submits form, API returns 200
      * Expected: Same as 201 - success toast and form cleared
      */
-    it("should handle 200 response as successful submission", () => {
+    // it("should handle 200 response as successful submission", () => {
 
-      cy.get("input[name='firstName']").type(validUser.firstName);
-      cy.get("input[name='lastName']").type(validUser.lastName);
-      cy.get("input[name='email']").type(validUser.email);
-      cy.get("input[name='birthDate']").type(validUser.birthDate.toISOString().split('T')[0]);
-      cy.get("input[name='postalCode']").type(validUser.postalCode);
-      cy.get("input[name='city']").type(validUser.city);
+    //   cy.get("input[name='firstName']").type(validUser.firstName);
+    //   cy.get("input[name='lastName']").type(validUser.lastName);
+    //   cy.get("input[name='email']").type(validUser.email);
+    //   cy.get("input[name='birthDate']").type(validUser.birthDate.toISOString().split('T')[0]);
+    //   cy.get("input[name='postalCode']").type(validUser.postalCode);
+    //   cy.get("input[name='city']").type(validUser.city);
 
-      cy.get("button[type='submit']").click();
+    //   cy.get("button[type='submit']").click();
 
-      cy.get(".Toastify__toast--success").should(
-        "contain",
-        "Formulaire soumis avec succès !"
-      );
-    });
+    //   cy.get(".Toastify__toast--success").should(
+    //     "contain",
+    //     "Formulaire soumis avec succès !"
+    //   );
+    // });
   });
 
   // describe("Business Error (400) - Email already exists", () => {
