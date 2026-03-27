@@ -272,7 +272,7 @@ jobs:
           install: false
           wait-on: "http://localhost:3000"
           wait-on-timeout: 120
-          command: npx cypress run --spec cypress/e2e/**/*.cy.js --env grepTags=@database-up --browser chrome
+          command: npx cypress run --spec cypress/e2e/**/*.cy.js --env grepTags="@database-up" --browser chrome
         env:
           REACT_APP_API_URL: http://localhost:8000
           REACT_APP_API_TOKEN: ${{ secrets.REACT_APP_API_TOKEN }}
@@ -294,7 +294,7 @@ jobs:
           install: false
           wait-on: "http://localhost:3000"
           wait-on-timeout: 120
-          command: npx cypress run --spec cypress/e2e/**/*.cy.js --env grepTags=@database-down --browser chrome
+          command: npx cypress run --spec cypress/e2e/**/*.cy.js --env grepTags="@database-down" --browser chrome
         env:
           REACT_APP_API_URL: http://localhost:8000
           REACT_APP_API_TOKEN: ${{ secrets.REACT_APP_API_TOKEN }}
