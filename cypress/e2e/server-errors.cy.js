@@ -1,376 +1,178 @@
-// /**
-//  * E2E Tests for Server Error Scenarios
-//  * Tests error handling when backend is unavailable
-//  */
-// describe("Registration Form E2E - Server Error Scenarios", () => {
-//   const API_URL = "https://localhost:3000/users";
+/**
+ * E2E Tests for server-down scenarios without mocking.
+ * The database is expected to be down for this tagged suite.
+ */
+describe("Registration Form E2E - Server Error Scenarios", { tags: "@database-down" }, () => {
+  const BACKEND_USERS_URL = "http://localhost:8000/users";
 
-//   const validUser = {
-//     firstName: "Diana",
-//     lastName: "Prince",
-//     email: "diana@example.com",
-//     birthDate: "1990-08-10",
-//     postalCode: "75005",
-//     city: "Marseille",
-//   };
+  const makeUser = () => ({
+    firstName: "Diana",
+    lastName: "Prince",
+    email: `diana.${Date.now()}@example.com`,
+    birthDate: "1990-08-10",
+    postalCode: "75005",
+    city: "Marseille",
+  });
 
-//   beforeEach(() => {
-//     cy.visit("/register");
-//   });
+  const requestCreateUser = (user) =>
+    cy.request({
+      method: "POST",
+      url: BACKEND_USERS_URL,
+      body: user,
+      failOnStatusCode: false,
+    });
 
-//   describe("Server Errors (5xx)", () => {
-//     /**
-//      * Test: Backend returns 500 Internal Server Error
-//      * Expected: User-friendly error message, app doesn't crash, form preserved
-//      */
-//     it("should handle 500 Internal Server Error without crashing", () => {
-//       cy.intercept("POST", API_URL, {
-//         statusCode: 500,
-//         body: {
-//           error: "Internal Server Error",
-//           message: "Database connection failed",
-//         },
-//       }).as("serverError");
+  const requestUsers = () =>
+    cy.request({
+      method: "GET",
+      url: BACKEND_USERS_URL,
+      failOnStatusCode: false,
+    });
 
-//       // Fill form
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(validUser.email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
+  const expectServerError = (response) => {
+    expect(response.status).to.be.gte(500);
+    expect(response.status).to.be.lt(600);
+  };
 
-//       // Submit
-//       cy.get("button[type='submit']").click();
+  const fillForm = (user) => {
+    cy.get("input[name='firstName']").type(user.firstName);
+    cy.get("input[name='lastName']").type(user.lastName);
+    cy.get("input[name='email']").type(user.email);
+    cy.get("input[name='birthDate']").type(user.birthDate);
+    cy.get("input[name='postalCode']").type(user.postalCode);
+    cy.get("input[name='city']").type(user.city);
+  };
 
-//       // Wait for failed API call
-//       cy.wait("@serverError");
+  beforeEach(() => {
+    cy.visit("/register");
+    cy.url().should("include", "/register");
+  });
 
-//       // Verify error toast
-//       cy.get(".Toastify__toast--error").should(
-//         "contain",
-//         "Le serveur est indisponible"
-//       );
+  it("shows server unavailable error when backend rejects user creation", () => {
+    const user = makeUser();
 
-//       // Verify app didn't crash - form is still there
-//       cy.get("form[aria-label='User registration form']").should("exist");
+    requestCreateUser(user).then(expectServerError);
 
-//       // Verify form title is visible
-//       cy.get("form h1").should("contain", "Registration Form");
+    fillForm(user);
+    cy.get("button[type='submit']").click();
 
-//       // Verify form data is preserved
-//       cy.get("input[name='firstName']").should(
-//         "have.value",
-//         validUser.firstName
-//       );
-//       cy.get("input[name='lastName']").should(
-//         "have.value",
-//         validUser.lastName
-//       );
-//       cy.get("input[name='email']").should("have.value", validUser.email);
-//       cy.get("input[name='postalCode']").should(
-//         "have.value",
-//         validUser.postalCode
-//       );
-//       cy.get("input[name='city']").should("have.value", validUser.city);
-//     });
+    cy.get(".Toastify__toast--error").should("contain", "Le serveur est indisponible");
+    cy.get("form[aria-label='User registration form']").should("exist");
 
-//     /**
-//      * Test: User can retry after 500 error
-//      * Expected: Second attempt with new API response succeeds
-//      */
-//     it("should allow user to retry after 500 server error", () => {
-//       let attemptCount = 0;
+    // Data stays in the form so user can retry later
+    cy.get("input[name='firstName']").should("have.value", user.firstName);
+    cy.get("input[name='lastName']").should("have.value", user.lastName);
+    cy.get("input[name='email']").should("have.value", user.email);
+  });
 
-//       cy.intercept("POST", API_URL, (req) => {
-//         attemptCount++;
-//         if (attemptCount === 1) {
-//           // First attempt fails
-//           req.reply({
-//             statusCode: 500,
-//             body: { error: "Server temporarily unavailable" },
-//           });
-//         } else {
-//           // Second attempt succeeds
-//           req.reply({
-//             statusCode: 201,
-//             body: {
-//               id: 50,
-//               ...req.body,
-//             },
-//           });
-//         }
-//       }).as("retryableRequest");
+  it("keeps all form data after a failed submit", () => {
+    const user = makeUser();
 
-//       // Fill form
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(validUser.email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
+    requestCreateUser(user).then(expectServerError);
 
-//       // First submission - fails
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@retryableRequest");
+    fillForm(user);
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
 
-//       cy.get(".Toastify__toast--error").should(
-//         "contain",
-//         "Le serveur est indisponible"
-//       );
+    cy.get("input[name='firstName']").should("have.value", user.firstName);
+    cy.get("input[name='lastName']").should("have.value", user.lastName);
+    cy.get("input[name='email']").should("have.value", user.email);
+    cy.get("input[name='birthDate']").should("have.value", user.birthDate);
+    cy.get("input[name='postalCode']").should("have.value", user.postalCode);
+    cy.get("input[name='city']").should("have.value", user.city);
+  });
 
-//       // Form data still there
-//       cy.get("input[name='firstName']").should(
-//         "have.value",
-//         validUser.firstName
-//       );
+  it("never shows a success toast when backend is down", () => {
+    const user = makeUser();
 
-//       // User clicks submit again - succeeds
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@retryableRequest");
+    requestCreateUser(user).then(expectServerError);
 
-//       // Verify success
-//       cy.get(".Toastify__toast--success").should(
-//         "contain",
-//         "Formulaire soumis avec succès"
-//       );
+    fillForm(user);
 
-//       // Form should be cleared after success
-//       cy.get("input[name='firstName']").should("have.value", "");
-//       cy.get("input[name='lastName']").should("have.value", "");
-//       cy.get("input[name='email']").should("have.value", "");
-//     });
+    // First try
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
 
-//     /**
-//      * Test: User sees navigation after server recovery
-//      * Expected: Can navigate back to home after error recovery
-//      */
-//     it("should allow navigation after server error recovery", () => {
-//       let attemptCount = 0;
+    // Second try should still fail while DB is down
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
 
-//       cy.intercept("POST", API_URL, (req) => {
-//         attemptCount++;
-//         if (attemptCount === 1) {
-//           req.reply({
-//             statusCode: 500,
-//             body: { error: "Maintenance" },
-//           });
-//         } else {
-//           req.reply({
-//             statusCode: 201,
-//             body: { id: 51, ...req.body },
-//           });
-//         }
-//       }).as("maintenanceRequest");
+    cy.get(".Toastify__toast--success").should("not.exist");
+  });
 
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(validUser.email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
+  it("keeps failing consistently while backend is down", () => {
+    const user = makeUser();
 
-//       // First attempt fails
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@maintenanceRequest");
-//       cy.get(".Toastify__toast--error").should("be.visible");
+    requestCreateUser(user).then(expectServerError);
 
-//       // Retry succeeds
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@maintenanceRequest");
-//       cy.get(".Toastify__toast--success").should("be.visible");
+    fillForm(user);
 
-//       // Form is cleared
-//       cy.get("input[name='firstName']").should("have.value", "");
+    // First try
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
 
-//       // Navigate back (if navigation exists)
-//       cy.get("a").first().then(($link) => {
-//         if ($link.text()) {
-//           cy.wrap($link).click();
-//           // Verify we navigated
-//           cy.url().should("not.include", "/register");
-//         }
-//       });
-//     });
-//   });
+    // Second try should still fail while DB is down
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
 
-//   describe("Specific 5xx Status Codes", () => {
-//     /**
-//      * Test: 502 Bad Gateway
-//      */
-//     it("should handle 502 Bad Gateway error", () => {
-//       cy.intercept("POST", API_URL, {
-//         statusCode: 502,
-//         body: { error: "Bad Gateway" },
-//       }).as("badGateway");
+    // Verify backend is still unavailable after retries
+    requestCreateUser({ ...user, email: `retry.${Date.now()}@example.com` }).then(expectServerError);
+  });
 
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(validUser.email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
+  it("allows editing fields after a backend failure", () => {
+    const user = makeUser();
 
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@badGateway");
+    requestCreateUser(user).then(expectServerError);
 
-//       cy.get(".Toastify__toast--error").should(
-//         "contain",
-//         "Le serveur est indisponible"
-//       );
-//       cy.get("form").should("exist");
-//     });
+    fillForm(user);
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
 
-//     /**
-//      * Test: 503 Service Unavailable
-//      */
-//     it("should handle 503 Service Unavailable error", () => {
-//       cy.intercept("POST", API_URL, {
-//         statusCode: 503,
-//         body: { error: "Service Unavailable" },
-//       }).as("unavailable");
+    const updatedEmail = `updated.${Date.now()}@example.com`;
+    cy.get("input[name='email']").clear().type(updatedEmail);
+    cy.get("input[name='email']").should("have.value", updatedEmail);
 
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(validUser.email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
+    cy.get(".Toastify__toast--success").should("not.exist");
+  });
 
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@unavailable");
+  it("fails for different users while server remains unavailable", () => {
+    const user1 = makeUser();
+    const user2 = { ...makeUser(), email: `diana.alt.${Date.now()}@example.com` };
 
-//       cy.get(".Toastify__toast--error").should(
-//         "contain",
-//         "Le serveur est indisponible"
-//       );
-//       cy.get("form").should("exist");
-//     });
+    requestCreateUser(user1).then(expectServerError);
+    requestCreateUser(user2).then(expectServerError);
 
-//     /**
-//      * Test: 504 Gateway Timeout
-//      */
-//     it("should handle 504 Gateway Timeout error", () => {
-//       cy.intercept("POST", API_URL, {
-//         statusCode: 504,
-//         body: { error: "Gateway Timeout" },
-//       }).as("timeout_test");
+    fillForm(user1);
+    cy.get("button[type='submit']").click();
+    cy.get(".Toastify__toast--error").should("be.visible");
 
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(validUser.email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
+    cy.get("input[name='firstName']").clear().type(user2.firstName);
+    cy.get("input[name='lastName']").clear().type(user2.lastName);
+    cy.get("input[name='email']").clear().type(user2.email);
+    cy.get("input[name='birthDate']").clear().type(user2.birthDate);
+    cy.get("input[name='postalCode']").clear().type(user2.postalCode);
+    cy.get("input[name='city']").clear().type(user2.city);
+    cy.get("button[type='submit']").click();
 
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@timeout_test");
+    cy.get(".Toastify__toast--error").should("be.visible");
+  });
 
-//       cy.get(".Toastify__toast--error").should(
-//         "contain",
-//         "Le serveur est indisponible"
-//       );
-//     });
-//   });
+  it("keeps the app usable after backend failure", () => {
+    const user = makeUser();
 
-//   describe("Intermittent Failures", () => {
-//     /**
-//      * Test: Intermittent server issues - fail then succeed
-//      * Expected: User can recover without data loss
-//      */
-//     it("should recover from intermittent server failures", () => {
-//       let callCount = 0;
+    requestUsers().then(expectServerError);
+    requestCreateUser(user).then(expectServerError);
 
-//       cy.intercept("POST", API_URL, (req) => {
-//         callCount++;
-//         if (callCount % 2 === 1) {
-//           // Odd calls fail
-//           req.reply({
-//             statusCode: 500,
-//             body: { error: "Intermittent failure" },
-//           });
-//         } else {
-//           // Even calls succeed
-//           req.reply({
-//             statusCode: 201,
-//             body: { id: 52, ...req.body },
-//           });
-//         }
-//       }).as("intermittentRequest");
+    fillForm(user);
+    cy.get("button[type='submit']").click();
 
-//       const email = "intermittent@example.com";
+    cy.get(".Toastify__toast--error").should("contain", "Le serveur est indisponible");
+    cy.get("form[aria-label='User registration form']").should("exist");
+    cy.get("input[name='email']").should("have.value", user.email);
 
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
-
-//       // Attempt 1 - fails
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@intermittentRequest");
-//       cy.get(".Toastify__toast--error").should("be.visible");
-
-//       // Verify email is still there
-//       cy.get("input[name='email']").should("have.value", email);
-
-//       // Attempt 2 - succeeds
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@intermittentRequest");
-//       cy.get(".Toastify__toast--success").should("be.visible");
-//     });
-
-//     /**
-//      * Test: Multiple sequential failures then recovery
-//      */
-//     it("should handle multiple failures before recovery", () => {
-//       let callCount = 0;
-
-//       cy.intercept("POST", API_URL, (req) => {
-//         callCount++;
-//         if (callCount < 3) {
-//           // First two calls fail
-//           req.reply({
-//             statusCode: 500,
-//             body: { error: "Service recovering" },
-//           });
-//         } else {
-//           // Third call succeeds
-//           req.reply({
-//             statusCode: 201,
-//             body: { id: 53, ...req.body },
-//           });
-//         }
-//       }).as("recoveryRequest");
-
-//       cy.get("input[name='firstName']").type(validUser.firstName);
-//       cy.get("input[name='lastName']").type(validUser.lastName);
-//       cy.get("input[name='email']").type(validUser.email);
-//       cy.get("input[name='birthDate']").type(validUser.birthDate);
-//       cy.get("input[name='postalCode']").type(validUser.postalCode);
-//       cy.get("input[name='city']").type(validUser.city);
-
-//       // Attempt 1
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@recoveryRequest");
-//       cy.get(".Toastify__toast--error").should("be.visible");
-
-//       // Attempt 2
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@recoveryRequest");
-//       cy.get(".Toastify__toast--error").should("be.visible");
-
-//       // Attempt 3 - succeeds
-//       cy.get("button[type='submit']").click();
-//       cy.wait("@recoveryRequest");
-//       cy.get(".Toastify__toast--success").should(
-//         "contain",
-//         "Formulaire soumis avec succès"
-//       );
-
-//       // Form is cleared
-//       cy.get("input[name='firstName']").should("have.value", "");
-//     });
-//   });
-// });
+    // Backend still down after UI attempt
+    requestUsers().then(expectServerError);
+  });
+});

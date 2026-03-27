@@ -214,7 +214,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start backend services
-        run: docker compose up -d --build
+        run: docker compose up -d
 
       - name: Wait for services to be healthy
         uses: jaracogmbh/docker-compose-health-check-action@v1.0.0
@@ -266,14 +266,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Cypress E2E tests against live environment
+      - name: Run Cypress E2E tests (@database-up)
         uses: cypress-io/github-action@v6
         with:
           install: false
           wait-on: "http://localhost:3000"
           wait-on-timeout: 120
-          spec: "cypress/e2e/**/*.cy.js"
-          browser: chrome
+          command: npx cypress run --spec "cypress/e2e/**/*.cy.js" --env grepTags=@database-up --browser chrome
+        env:
+          REACT_APP_API_URL: http://localhost:8000
+          REACT_APP_API_TOKEN: ${{ secrets.REACT_APP_API_TOKEN }}
+
+      - name: Stop database service
+        run: docker compose stop db
+
+      - name: Verify DB is stopped
+        run: |
+          if docker compose ps db | grep -qi "running"; then
+            echo "Database is still running"
+            exit 1
+          fi
+          echo "Database is stopped"
+
+      - name: Run Cypress E2E tests (@database-down)
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          wait-on: "http://localhost:3000"
+          wait-on-timeout: 120
+          command: npx cypress run --spec "cypress/e2e/**/*.cy.js" --env grepTags=@database-down --browser chrome
         env:
           REACT_APP_API_URL: http://localhost:8000
           REACT_APP_API_TOKEN: ${{ secrets.REACT_APP_API_TOKEN }}
@@ -286,12 +307,13 @@ jobs:
           path: cypress/videos
           retention-days: 7
 
-      - name: Upload Cypress screenshots
+      - name: Upload failed test PNG artifacts
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: cypress-screenshots
-          path: cypress/screenshots
+          name: failed-test-png
+          path: cypress/screenshots/**/*.png
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: Generate E2E test report

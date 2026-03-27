@@ -7,129 +7,134 @@ const generateUniqueUser = () => ({
     city: "Lyon",
 });
 
-const waitForApiReady = () => {
-    cy.request({
-        method: "GET",
-        url: "http://localhost:8000/users",
-        failOnStatusCode: false,
-        timeout: 30000,
-    }).its("status").should("eq", 200);
-};
-
-describe("Navigation Scenarios - E2E", () => {
+describe("Navigation Scenarios - E2E", {tags: '@database-up'}, () => {
 
     let newUser;
     let newUser2;
 
+
     beforeEach(() => {
-        // Generate unique users for each test (real env persistence requires fresh data)
+        // Generate fresh users for each test to avoid reusing persisted emails
         newUser = generateUniqueUser();
         newUser2 = generateUniqueUser();
-
-        // Clear storage before mounting app
-        cy.clearLocalStorage();
-        
-        // Ensure backend is reachable before mounting the app
-        waitForApiReady();
-        
-        // Load home page and wait for app shell to render
-        cy.visit("/", { timeout: 60000 });
-        
-        // Wait for nav bar to appear (more stable than text-based selectors)
-        cy.get("nav", { timeout: 60000 }).should("exist");
-        cy.get("strong", { timeout: 60000 }).should("be.visible");
     });
 
     context("Scénario Nominal", ()=>{
-        // it('should add a valid user', () => {
-        //     let initialCount;
-        //     // Accueil
-        //     cy.visit("/");
-        //     cy.get("strong", { timeout: 20000 }).should("be.visible");
+        it('should add a valid user', () => {
+            let initialCount;
+
+            // Direct API check (without intercept)
+            cy.request("http://localhost:8000/users").its("status").should("eq", 200);
+
+            // Accueil
+            cy.visit("/");
+            cy.get("strong", { timeout: 20000 }).should("be.visible");
             
-        //     cy.get("strong").then(($strong) => {
-        //         initialCount = parseInt($strong.text());
-        //         cy.log(`Initial user count: ${initialCount}`);
-        //     });
+            cy.get("strong").then(($strong) => {
+                initialCount = parseInt($strong.text());
+                cy.log(`Initial user count: ${initialCount}`);
+            });
 
-        //     // Navigation vers le formulaire d'inscription
-        //     cy.contains("Register", { timeout: 20000 }).click();
-        //     cy.url().should("include", "/register");
-        //     cy.get("input[name='firstName']", { timeout: 20000 }).should("be.visible");
+            // Navigation vers le formulaire d'inscription
+            cy.contains("Register", { timeout: 20000 }).click();
+            cy.url().should("include", "/register");
+            cy.get("input[name='firstName']", { timeout: 20000 }).should("be.visible");
 
             
-        //     // Remplissage du formulaire valide
-        //     cy.get("input[name='firstName']").type(newUser.firstName);
-        //     cy.get("input[name='lastName']").type(newUser.lastName);
-        //     cy.get("input[name='email']").type(newUser.email);
-        //     cy.get("input[name='birthDate']").type(newUser.birthDate.toISOString().split('T')[0]);
-        //     cy.get("input[name='postalCode']").type(newUser.postalCode);
-        //     cy.get("input[name='city']").type(newUser.city);
+            // Remplissage du formulaire valide
+            cy.get("input[name='firstName']").type(newUser.firstName);
+            cy.get("input[name='lastName']").type(newUser.lastName);
+            cy.get("input[name='email']").type(newUser.email);
+            cy.get("input[name='birthDate']").type(newUser.birthDate.toISOString().split('T')[0]);
+            cy.get("input[name='postalCode']").type(newUser.postalCode);
+            cy.get("input[name='city']").type(newUser.city);
 
-        //     //Validation du formulaire
-        //     cy.get("button[type='submit']").should("be.enabled").click();
+            //Validation du formulaire
+            cy.get("button[type='submit']").should("be.enabled").click();
             
-        //     cy.get(".Toastify__toast").should("contain", "Formulaire soumis avec succès !");            
+            cy.get(".Toastify__toast").should("contain", "Formulaire soumis avec succès !");            
 
-        //     cy.visit("/");
-        //     cy.get("strong").then(($strong) => {
-        //         const finalCount = parseInt($strong.text());
-        //         cy.log(`Final user count: ${finalCount}`);
-        //         expect(finalCount).to.equal(initialCount + 1);
-        //     });
-        //     cy.get("#user-list", { timeout: 5000 }).should("exist");
-        //     cy.get("#user-list").contains(newUser.firstName);
-        //     cy.get("#user-list").contains(newUser.lastName);
-        // })
+            // API must be healthy after submit and contain created user
+            cy.request("http://localhost:8000/users").then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body.some((u) => u.email === newUser.email)).to.eq(true);
+            });
+
+            cy.visit("/");
+            cy.get("strong").then(($strong) => {
+                const finalCount = parseInt($strong.text());
+                cy.log(`Final user count: ${finalCount}`);
+                expect(finalCount).to.equal(initialCount + 1);
+            });
+            cy.get("#user-list", { timeout: 5000 }).should("exist");
+            cy.get("#user-list").contains(newUser.firstName);
+            cy.get("#user-list").contains(newUser.lastName);
+        })
     })
 
     context("Scénario d'Erreur", () => {
-        // it("Tentative d'ajout invalide par email déjà pris", () => {
-        //     // Navigation vers formulaire
-        //     cy.visit("/register");
+        it("Tentative d'ajout invalide par email déjà pris", () => {
+            // Direct API check (without intercept)
+            cy.request("http://localhost:8000/users").its("status").should("eq", 200);
+
+            // Navigation vers formulaire
+            cy.visit("/register");
             
-        //     cy.get("input[name='firstName']").type(newUser.firstName);
-        //     cy.get("input[name='lastName']").type(newUser.lastName);
-        //     cy.get("input[name='email']").type(newUser.email);
-        //     cy.get("input[name='birthDate']").type(newUser.birthDate.toISOString().split('T')[0]);
-        //     cy.get("input[name='postalCode']").type(newUser.postalCode);
-        //     cy.get("input[name='city']").type(newUser.city);
+            cy.get("input[name='firstName']").type(newUser.firstName);
+            cy.get("input[name='lastName']").type(newUser.lastName);
+            cy.get("input[name='email']").type(newUser.email);
+            cy.get("input[name='birthDate']").type(newUser.birthDate.toISOString().split('T')[0]);
+            cy.get("input[name='postalCode']").type(newUser.postalCode);
+            cy.get("input[name='city']").type(newUser.city);
             
-        //     cy.get("button[type='submit']").should("be.enabled").click();
+            cy.get("button[type='submit']").should("be.enabled").click();
 
-        //     // Remplissage invalide (email déjà pris)
-        //     cy.get("input[name='firstName']").type(newUser2.firstName);
-        //     cy.get("input[name='lastName']").type(newUser2.lastName);
-        //     cy.get("input[name='email']").type(newUser.email);
-        //     cy.get("input[name='birthDate']").type(newUser2.birthDate.toISOString().split('T')[0]);
-        //     cy.get("input[name='postalCode']").type(newUser2.postalCode);
-        //     cy.get("input[name='city']").type(newUser2.city);
+            // First creation should be persisted
+            cy.request("http://localhost:8000/users").then((response) => {
+                expect(response.status).to.eq(200);
+                expect(response.body.some((u) => u.email === newUser.email)).to.eq(true);
+            });
 
-        //     //Validation du formulaire
-        //     cy.get("button[type='submit']").should("be.enabled").click();
+            // Remplissage invalide (email déjà pris)
+            cy.get("input[name='firstName']").type(newUser2.firstName);
+            cy.get("input[name='lastName']").type(newUser2.lastName);
+            cy.get("input[name='email']").type(newUser.email);
+            cy.get("input[name='birthDate']").type(newUser2.birthDate.toISOString().split('T')[0]);
+            cy.get("input[name='postalCode']").type(newUser2.postalCode);
+            cy.get("input[name='city']").type(newUser2.city);
+
+            //Validation du formulaire
+            cy.get("button[type='submit']").should("be.enabled").click();
             
-        //     // Wait for error response from API (real env requires timeout)
-        //     cy.get(".Toastify__toast--error", { timeout: 8000 }).should("contain", "Cet email est déjà utilisé");
+            // Wait for error response from API (real env requires timeout)
+            cy.get(".Toastify__toast--error", { timeout: 8000 }).should("contain", "Cet email est déjà utilisé");
 
-        //     // Form data should be preserved
-        //     cy.get("input[name='firstName']").should("have.value", newUser2.firstName);
-        //     cy.get("input[name='email']").should("have.value", newUser.email);
-        // });
+            // API stays healthy and duplicate email is still unique in DB
+            cy.request("http://localhost:8000/users").then((response) => {
+                expect(response.status).to.eq(200);
+                const sameEmailUsers = response.body.filter((u) => u.email === newUser.email);
+                expect(sameEmailUsers.length).to.eq(1);
+            });
 
-        // it("Tentative d'ajout invalide par champ Ville vide", () => {
-        //     // Navigation vers formulaire
-        //     cy.visit("/register");
+            // Form data should be preserved
+            cy.get("input[name='firstName']").should("have.value", newUser2.firstName);
+            cy.get("input[name='email']").should("have.value", newUser.email);
+        });
 
-        //     // Remplissage invalide (email déjà pris)
-        //     cy.get("input[name='firstName']").type(newUser2.firstName);
-        //     cy.get("input[name='lastName']").type(newUser2.lastName);
-        //     cy.get("input[name='email']").type(newUser2.email);
-        //     cy.get("input[name='birthDate']").type(newUser2.birthDate.toISOString().split('T')[0]);
-        //     cy.get("input[name='postalCode']").type(newUser2.postalCode);
-        //     // City field is NOT filled
+        it("Tentative d'ajout invalide par champ Ville vide", () => {
+            // Navigation vers formulaire
+            cy.visit("/register");
 
-        //     //Validation du formulaire - button should be disabled
-        //     cy.get("button[type='submit']").should("be.disabled").click({ force: true });
-        // });
+            // Remplissage invalide (email déjà pris)
+            cy.get("input[name='firstName']").type(newUser2.firstName);
+            cy.get("input[name='lastName']").type(newUser2.lastName);
+            cy.get("input[name='email']").type(newUser2.email);
+            cy.get("input[name='birthDate']").type(newUser2.birthDate.toISOString().split('T')[0]);
+            cy.get("input[name='postalCode']").type(newUser2.postalCode);
+            // City field is NOT filled
+
+            //Validation du formulaire - button should be disabled
+            cy.get("button[type='submit']").should("be.disabled").click({ force: true });
+        });
     });
 })
