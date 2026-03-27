@@ -28,12 +28,16 @@ describe("Navigation Scenarios - E2E", {tags: '@database-up'}, () => {
 
             // Accueil
             cy.visit("/");
-            cy.get("strong", { timeout: 20000 }).should("be.visible");
             
-            cy.get("strong").then(($strong) => {
-                initialCount = parseInt($strong.text());
-                cy.log(`Initial user count: ${initialCount}`);
+            // Wait for home page to load and fetch users via API
+            cy.request("http://localhost:8000/users").then((response) => {
+                initialCount = response.body.length;
+                cy.log(`Initial user count from API: ${initialCount}`);
             });
+            
+            // Reload page to ensure UI reflects API data
+            cy.reload();
+            cy.get("strong", { timeout: 20000 }).should("be.visible").should("contain", initialCount.toString());
 
             // Navigation vers le formulaire d'inscription
             cy.contains("Register", { timeout: 20000 }).click();
@@ -61,11 +65,17 @@ describe("Navigation Scenarios - E2E", {tags: '@database-up'}, () => {
             });
 
             cy.visit("/");
-            cy.get("strong").then(($strong) => {
-                const finalCount = parseInt($strong.text());
-                cy.log(`Final user count: ${finalCount}`);
+            cy.reload();
+            
+            // Verify final count via API
+            cy.request("http://localhost:8000/users").then((response) => {
+                const finalCount = response.body.length;
+                cy.log(`Final user count from API: ${finalCount}`);
                 expect(finalCount).to.equal(initialCount + 1);
             });
+            
+            // Verify UI shows correct count
+            cy.get("strong", { timeout: 20000 }).should("contain", (initialCount + 1).toString());
             cy.get("#user-list", { timeout: 5000 }).should("exist");
             cy.get("#user-list").contains(newUser.firstName);
             cy.get("#user-list").contains(newUser.lastName);
@@ -94,6 +104,9 @@ describe("Navigation Scenarios - E2E", {tags: '@database-up'}, () => {
                 expect(response.status).to.eq(200);
                 expect(response.body.some((u) => u.email === newUser.email)).to.eq(true);
             });
+
+            // Wait for form to be cleared after successful submission
+            cy.get("input[name='firstName']", { timeout: 10000 }).should("have.value", "");
 
             // Remplissage invalide (email déjà pris)
             cy.get("input[name='firstName']").type(newUser2.firstName);
@@ -124,6 +137,7 @@ describe("Navigation Scenarios - E2E", {tags: '@database-up'}, () => {
         it("Tentative d'ajout invalide par champ Ville vide", () => {
             // Navigation vers formulaire
             cy.visit("/register");
+            cy.get("input[name='firstName']", { timeout: 10000 }).should("be.visible");
 
             // Remplissage invalide (email déjà pris)
             cy.get("input[name='firstName']").type(newUser2.firstName);
